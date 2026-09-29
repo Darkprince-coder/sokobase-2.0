@@ -1,4 +1,5 @@
 import { site } from "./site";
+import { createPublicClient } from "./supabase/public";
 import type { HeroSlide } from "./types";
 
 const DEFAULT_SLIDE: HeroSlide = {
@@ -9,7 +10,22 @@ const DEFAULT_SLIDE: HeroSlide = {
   href: "/products",
 };
 
-// Later reads platform_settings from Supabase. Same return shape, pages won't change.
+type Stored = { id?: string; title?: string; subtitle?: string; ctaLabel?: string; href?: string; imageUrl?: string };
+
+// Reads slides saved in Admin > Hero slides. Falls back to lib/site.ts, then the default gradient slide.
 export async function getHeroSlides(): Promise<HeroSlide[]> {
+  try {
+    const { data } = await createPublicClient().from("platform_settings").select("value").eq("key", "hero_slides").maybeSingle();
+    const list: Stored[] = Array.isArray(data?.value) ? data.value : [];
+    const slides = list
+      .filter((s) => s.id && s.title)
+      .map((s): HeroSlide => ({
+        id: s.id!, title: s.title!, subtitle: s.subtitle || undefined,
+        ctaLabel: s.ctaLabel || undefined, href: s.href || undefined, imageUrl: s.imageUrl || null,
+      }));
+    if (slides.length) return slides;
+  } catch {
+    // Supabase not configured yet: use the fallback below.
+  }
   return site.heroSlides.length ? site.heroSlides : [DEFAULT_SLIDE];
 }

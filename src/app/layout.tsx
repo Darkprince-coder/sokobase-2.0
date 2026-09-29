@@ -3,6 +3,7 @@ import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import SiteChrome from "@/components/SiteChrome";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
@@ -26,7 +27,6 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
   icons: { icon: "/icon.svg", apple: "/icons/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: site.name, statusBarStyle: "default" },
-  // Only needed if your Search Console property was verified with the HTML tag method.
   verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION },
 };
 
@@ -40,10 +40,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <a href="#main" className="visually-hidden">Skip to content</a>
         <Providers>
-          <Header />
-          <main id="main">{children}</main>
-          <Footer />
-          <BottomNav />
+          <SiteChrome header={<Header />} footer={<Footer />} bottomNav={<BottomNav />}>
+            {children}
+          </SiteChrome>
         </Providers>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(websiteJsonLd) }} />
         {gaId && process.env.NODE_ENV === "production" && <GoogleAnalytics gaId={gaId} />}

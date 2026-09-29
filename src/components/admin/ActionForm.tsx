@@ -1,0 +1,41 @@
+"use client";
+import { useActionState, useEffect, useRef, type ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import Button from "@/components/Button";
+import type { ActionState } from "@/lib/action-state";
+import styles from "./admin.module.css";
+
+type Props = {
+  action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
+  children: ReactNode;
+  submitLabel: string;
+  resetOnSuccess?: boolean;
+  variant?: "primary" | "outline" | "soft";
+  className?: string;
+};
+
+export default function ActionForm({ action, children, submitLabel, resetOnSuccess = false, variant = "primary", className }: Props) {
+  const [state, formAction, pending] = useActionState<ActionState, FormData>(action, {});
+  const ref = useRef<HTMLFormElement>(null);
+  useEffect(() => { if (state.ok && resetOnSuccess) ref.current?.reset(); }, [state, resetOnSuccess]);
+
+  return (
+    <form ref={ref} action={formAction} className={`${styles.form} ${className ?? ""}`}>
+      {children}
+      <AnimatePresence mode="wait">
+        {(state.error || state.message) && (
+          <motion.p key={state.error ?? state.message} role={state.error ? "alert" : "status"} className={state.error ? styles.msgErr : styles.msgOk}
+            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            {state.error ?? state.message}
+          </motion.p>
+        )}
+      </AnimatePresence>
+      <div>
+        <Button type="submit" variant={variant} size="md" disabled={pending} icon={pending ? <Loader2 size={16} className={styles.spin} /> : undefined}>
+          {pending ? "Saving" : submitLabel}
+        </Button>
+      </div>
+    </form>
+  );
+}
