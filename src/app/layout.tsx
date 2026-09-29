@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans } from "next/font/google";
+import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import Header from "@/components/Header";
@@ -8,8 +9,9 @@ import BottomNav from "@/components/BottomNav";
 import { site } from "@/lib/site";
 import { jsonLdString, websiteJsonLd } from "@/lib/jsonld";
 
-// To match your current site's font, swap this import and the variable name in tokens.css (--font-sans).
-const sans = DM_Sans({ subsets: ["latin"], variable: "--font-dmsans", display: "swap" });
+const display = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", display: "swap" });
+const body = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["500", "600"], variable: "--font-plex-mono", display: "swap" });
 
 const title = `${site.name} | Shop verified businesses across Kenya`;
 
@@ -24,16 +26,19 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
   icons: { icon: "/icon.svg", apple: "/icons/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: site.name, statusBarStyle: "default" },
-  // Session 7: add verification: { google: "<search-console-token>" }
+  // Only needed if your Search Console property was verified with the HTML tag method.
+  verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION },
 };
 
 export const viewport: Viewport = { themeColor: "#1F7A4D", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
+const gaId = process.env.NEXT_PUBLIC_GA_ID;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-KE" className={sans.variable}>
+    <html lang="en-KE" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body>
-        <a href="#main" className="skipLink">Skip to content</a>
+        <a href="#main" className="visually-hidden">Skip to content</a>
         <Providers>
           <Header />
           <main id="main">{children}</main>
@@ -41,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <BottomNav />
         </Providers>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(websiteJsonLd) }} />
+        {gaId && process.env.NODE_ENV === "production" && <GoogleAnalytics gaId={gaId} />}
       </body>
     </html>
   );

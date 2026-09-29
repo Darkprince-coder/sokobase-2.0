@@ -1,7 +1,7 @@
 .hero { position: relative; overflow: hidden; border-radius: var(--radius-lg); height: 220px; background: var(--green-900); touch-action: pan-y; }
 .slide { position: absolute; inset: 0; display: flex; align-items: center; cursor: grab; }
 .slide:active { cursor: grabbing; }
-.gradient { background: linear-gradient(115deg, var(--green-900) 0%, var(--green) 62%, #35a06a 100%); }
+ .gradient { background: linear-gradient(115deg, var(--color-primary-dark) 0%, var(--color-primary) 100%); }
 .hasImage { background: var(--green-900); }
 .img { object-fit: cover; user-select: none; }
 .hasImage::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8, 30, 20, 0.78) 0%, rgba(8, 30, 20, 0.35) 55%, rgba(8, 30, 20, 0) 100%); }

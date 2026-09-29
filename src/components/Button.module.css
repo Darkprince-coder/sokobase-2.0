@@ -9,8 +9,8 @@
 .primary:hover { background: var(--green-700); }
 .outline { background: var(--white); color: var(--green); border-color: var(--green); }
 .outline:hover { background: var(--green); color: #fff; }
-.accent { background: var(--amber); color: var(--ink); }
-.accent:hover { background: #e39000; }
+.accent { background: var(--color-ochre); color: var(--color-charcoal); }
+.accent:hover { background: #b56a22; }
 .soft { background: var(--green-50); color: var(--green-700); }
 .soft:hover { background: var(--green-100); }
 .ghost { background: transparent; color: var(--ink-2); }

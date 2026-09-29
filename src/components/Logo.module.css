@@ -1,5 +1,5 @@
 .logo { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; flex: none; }
-.word { font-weight: 700; letter-spacing: -0.03em; line-height: 1; color: var(--ink); }
+.word { font-family: var(--font-display);font-weight: 700; letter-spacing: -0.03em; line-height: 1; color: var(--ink); }
 .base { color: var(--green); }
 .light { color: #fff; }
 .light .base { color: #7fd6a4; }

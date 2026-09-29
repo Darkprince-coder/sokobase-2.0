@@ -23,6 +23,7 @@ export default function Footer() {
         <nav aria-label="Sell" className={styles.col}>
           <h3>Sell</h3>
           <Link href="/join">List your business</Link>
+          <Link href="/login">Business sign in</Link>
           {site.supportWhatsapp && <a href={whatsappLink(site.supportWhatsapp, "Hi SokoBase")} target="_blank" rel="noopener noreferrer">Chat with SokoBase</a>}
         </nav>
       </div>
