@@ -32,7 +32,7 @@ export async function createInvite(_prev: ActionState, fd: FormData): Promise<Ac
     });
     if (!error) {
       revalidatePath("/admin/invites");
-      return done("Invite created.", { code, link: `${site.url}/join?code=${code}`, expires });
+       return done("Invite created.", { code, link: `${site.portalUrl}/join?code=${code}`, expires });
     }
     if (error.code !== "23505") return fail("Could not create the invite.");
   }
