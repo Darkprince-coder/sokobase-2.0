@@ -1,0 +1,10 @@
+.tiles { display: none; gap: 12px; height: 340px; flex-direction: column; }
+.tile { flex: 1; border-radius: var(--radius-lg); padding: 18px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; }
+.tile strong { font-size: 16px; }
+.tile span { font-size: 13px; opacity: 0.85; }
+.sell { background: var(--amber-50); color: var(--amber-700); border: 1px solid #f7e2a6; transition: transform 0.2s var(--ease), box-shadow 0.2s; }
+.sell:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+.sell strong { color: var(--ink); }
+.info { background: var(--green-50); color: var(--green-700); border: 1px solid var(--green-100); }
+.info strong { color: var(--ink); }
+@media (min-width: 1280px) { .tiles { display: flex; } }

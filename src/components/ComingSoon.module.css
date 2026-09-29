@@ -1,0 +1,3 @@
+.wrap { max-width: 560px; padding-top: 64px; padding-bottom: 32px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.wrap h1 { font-size: 26px; }
+.wrap p { color: var(--ink-2); }

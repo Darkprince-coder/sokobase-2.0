@@ -1,0 +1,30 @@
+.topbar { background: var(--green-900); color: #d7efe1; font-size: 12.5px; }
+.topInner { display: flex; justify-content: space-between; align-items: center; height: 34px; }
+.topInner a { text-decoration: none; font-weight: 600; color: #fff; }
+.topInner a:hover { text-decoration: underline; }
+.topInner span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 12px; }
+.header { position: sticky; top: 0; z-index: 50; background: var(--white); border-bottom: 1px solid var(--line); }
+.row { display: flex; align-items: center; gap: 24px; height: 68px; }
+.search { display: none; flex: 1; max-width: 640px; }
+.actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.saved { position: relative; display: flex; align-items: center; gap: 8px; text-decoration: none; padding: 8px 10px; border-radius: var(--radius-md); font-weight: 600; transition: background 0.18s; }
+.saved:hover { background: var(--bg); }
+.savedLabel { display: none; }
+.count { position: absolute; top: 2px; left: 24px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.sell { display: none; }
+.mobileSearch { padding-bottom: 10px; }
+.catnav { display: none; border-top: 1px solid var(--line); }
+.catInner { display: flex; gap: 4px; height: 42px; align-items: center; overflow-x: auto; scrollbar-width: none; }
+.catInner::-webkit-scrollbar { display: none; }
+.catInner a { flex: none; text-decoration: none; font-size: 13.5px; font-weight: 500; color: var(--ink-2); padding: 6px 12px; border-radius: var(--radius-sm); transition: background 0.15s, color 0.15s; }
+.catInner a:hover { background: var(--green-50); color: var(--green-700); }
+.catInner .hot { color: var(--red); font-weight: 700; }
+.catInner .hot:hover { background: var(--red-50); color: var(--red); }
+@media (min-width: 768px) {
+  .search { display: block; }
+  .mobileSearch { display: none; }
+  .savedLabel { display: inline; }
+  .sell { display: inline-flex; }
+  .catnav { display: block; }
+  .count { left: 22px; }
+}

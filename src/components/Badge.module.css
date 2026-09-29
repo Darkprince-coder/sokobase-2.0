@@ -1,0 +1,4 @@
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: var(--radius-sm); line-height: 1.2; }
+.hot { background: var(--red); color: #fff; }
+.offer { background: var(--amber); color: var(--ink); }
+.new { background: var(--green); color: #fff; }
