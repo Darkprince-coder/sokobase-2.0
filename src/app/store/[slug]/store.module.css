@@ -1,0 +1,15 @@
+.page { padding-bottom: 40px; }
+.cover { position: relative; height: 160px; background: var(--color-primary-tint); }
+.coverImg { object-fit: cover; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; padding-top: 18px; padding-bottom: 18px; }
+.logo { flex: none; width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: var(--color-primary-tint); color: var(--green-700); display: grid; place-items: center; border: 3px solid var(--white); margin-top: -36px; box-shadow: var(--shadow-1); }
+.logoImg { object-fit: cover; }
+.info { flex: 1; min-width: 200px; }
+.info h1 { font-size: 22px; }
+.meta { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--ink-3); margin-top: 4px; }
+.desc { font-size: 14px; color: var(--ink-2); margin-top: 8px; max-width: 60ch; }
+.h2 { font-size: 18px; margin: 6px 0 14px; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.empty { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; color: var(--ink-3); padding: 50px 20px; background: var(--white); border-radius: var(--radius-lg); }
+@media (min-width: 640px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); } .cover { height: 220px; } }

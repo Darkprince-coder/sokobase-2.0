@@ -1,0 +1,49 @@
+.layout { display: grid; gap: 22px; padding-bottom: 90px; }
+.left { position: relative; }
+.right { display: flex; flex-direction: column; gap: 4px; }
+.crumb { font-size: 12.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; }
+.name { font-size: clamp(20px, 4vw, 26px); margin-top: 2px; margin-bottom: 8px; }
+.priceRow { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.price { font-family: var(--font-mono); font-weight: 600; font-size: 26px; color: var(--green-700); }
+.old { font-family: var(--font-mono); font-size: 15px; color: var(--ink-3); text-decoration: line-through; }
+.off { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; color: var(--red); background: var(--red-50); padding: 2px 8px; border-radius: var(--radius-sm); }
+.inStock, .outStock { font-size: 13.5px; font-weight: 600; margin-top: 6px; }
+.inStock { color: var(--green-700); }
+.outStock { color: var(--color-danger); }
+
+.variants { margin-top: 16px; }
+.variantsLabel { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.variantList { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.variant, .variantOn { font-size: 13.5px; font-weight: 600; padding: 8px 16px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white); cursor: pointer; color: var(--ink-2); }
+.variant:disabled { opacity: 0.4; cursor: not-allowed; text-decoration: line-through; }
+.variantOn { border-color: var(--color-primary); background: var(--color-primary-tint); color: var(--green-700); }
+
+.actionRow { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
+.heart { width: 46px; height: 46px; flex: none; border-radius: 50%; border: 1.5px solid var(--line); background: var(--white); color: var(--ink-3); display: grid; place-items: center; cursor: pointer; }
+.heartOn { color: var(--red); border-color: var(--red); }
+.orderDesktop { display: none; }
+
+.shopCard { margin-top: 18px; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-md); text-decoration: none; color: var(--ink); background: var(--white); transition: box-shadow 0.2s, transform 0.2s; }
+.shopCard:hover { box-shadow: var(--shadow-2); transform: translateY(-1px); }
+.shopIcon { flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--color-primary-tint); color: var(--green-700); display: grid; place-items: center; }
+.shopCard strong { display: block; font-size: 14.5px; }
+.shopLoc { display: flex; align-items: center; gap: 3px; font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+.visit { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--color-primary); white-space: nowrap; }
+
+.section { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.section h2 { font-size: 16px; margin-bottom: 10px; }
+.desc { font-size: 14.5px; color: var(--ink-2); white-space: pre-line; line-height: 1.6; }
+.specs { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+.specs div { display: grid; grid-template-columns: 130px 1fr; font-size: 13.5px; border-bottom: 1px solid var(--line); }
+.specs div:last-child { border-bottom: 0; }
+.specs dt { padding: 9px 12px; background: var(--paper-2); color: var(--ink-3); font-weight: 500; }
+.specs dd { padding: 9px 12px; margin: 0; }
+
+.orderMobile { position: fixed; left: 0; right: 0; bottom: 0; z-index: 65; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--color-primary); color: #fff; font-weight: 700; font-size: 15px; padding: 14px; padding-bottom: calc(14px + env(safe-area-inset-bottom)); text-decoration: none; }
+
+@media (min-width: 860px) {
+  .layout { grid-template-columns: 1fr 1fr; gap: 40px; padding-bottom: 40px; }
+  .orderDesktop { display: flex; align-items: center; justify-content: center; gap: 8px; flex: 1; background: var(--color-primary); color: #fff; font-weight: 700; font-size: 15px; text-decoration: none; padding: 13px; border-radius: var(--radius-md); }
+  .orderDesktop:hover { background: var(--color-primary-dark); }
+  .orderMobile { display: none; }
+}

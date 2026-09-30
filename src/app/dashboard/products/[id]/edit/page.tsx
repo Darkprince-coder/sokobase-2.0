@@ -13,18 +13,25 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   const { supabase, business } = await requireBusiness();
   if (!business) return null;
 
-  const [{ data: product }, { data: categories }] = await Promise.all([
-    supabase.from("products").select("id, name, description, category_id, price, old_price, price_type, badge, images, in_stock, status")
+  const [{ data: product }, { data: variants }, { data: categories }] = await Promise.all([
+    supabase.from("products").select("id, name, description, category_id, price, old_price, price_type, badge, images, in_stock, status, specs")
       .eq("id", id).eq("business_id", business.id).maybeSingle(),
+    supabase.from("product_variants").select("id, label, price, old_price, in_stock").eq("product_id", id).order("sort_order"),
     supabase.from("categories").select("id, name").eq("active", true).order("sort_order"),
   ]);
   if (!product) notFound();
+
+  const full = {
+    ...product,
+    specs: (product.specs ?? {}) as Record<string, string>,
+    variants: (variants ?? []).map((v) => ({ id: v.id, label: v.label, price: v.price ? Number(v.price) : null, oldPrice: v.old_price ? Number(v.old_price) : null, inStock: v.in_stock })),
+  };
 
   return (
     <>
       <header className={styles.head}><h1>Edit product</h1></header>
       <section className={styles.panel}>
-        <ProductForm product={product} categories={categories ?? []} remaining={null} />
+        <ProductForm product={full} categories={categories ?? []} remaining={null} />
       </section>
     </>
   );

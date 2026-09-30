@@ -8,14 +8,19 @@ import ProductSection from "@/components/ProductSection";
 import ShopsSection from "@/components/ShopsSection";
 import Button from "@/components/Button";
 import { getHeroSlides } from "@/lib/settings";
-import { mockProducts } from "@/lib/mock";
+import { getProducts, getShops } from "@/lib/catalog";
 import { site, whatsappLink } from "@/lib/site";
 import styles from "./page.module.css";
 
 export default async function Home() {
-  const slides = await getHeroSlides();
-  const deals = mockProducts.filter((p) => p.badge === "hot" || p.badge === "offer");
-  const fresh = mockProducts.filter((p) => p.badge === "new");
+  const [slides, deals, fresh, recommended, shops] = await Promise.all([
+    getHeroSlides(),
+    getProducts({ badge: "hot", limit: 12 }),
+    getProducts({ badge: "new", limit: 8 }),
+    getProducts({ limit: 12 }),
+    getShops({ limit: 4 }),
+  ]);
+  const offers = deals.length ? deals : await getProducts({ badge: "offer", limit: 12 });
   const sellHref = site.supportWhatsapp ? whatsappLink(site.supportWhatsapp, "Hi SokoBase, I want to list my business.") : "/join";
 
   return (
@@ -27,10 +32,10 @@ export default async function Home() {
       </div>
       <CategoryScroller />
       <TrustStrip />
-      <ProductSection title="Hot deals" href="/products?badge=hot" products={deals} layout="rail" icon={<Flame size={20} />} tone="hot" />
-      <ProductSection title="New arrivals" href="/products?badge=new" products={fresh} layout="grid" icon={<Sparkles size={20} />} />
-      <ShopsSection />
-      <ProductSection title="Recommended for you" href="/products" products={mockProducts} layout="grid" />
+      {offers.length > 0 && <ProductSection title="Hot deals" href="/products?badge=hot" products={offers} layout="rail" icon={<Flame size={20} />} tone="hot" />}
+      {fresh.length > 0 && <ProductSection title="New arrivals" href="/products?badge=new" products={fresh} layout="grid" icon={<Sparkles size={20} />} />}
+      <ShopsSection shops={shops} />
+      {recommended.length > 0 && <ProductSection title="Browse products" href="/products" products={recommended} layout="grid" />}
       <section className={`container ${styles.ctaWrap}`}>
         <div className={styles.cta}>
           <div>

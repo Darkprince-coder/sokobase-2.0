@@ -40,6 +40,11 @@ export async function updateProfile(_prev: ActionState, fd: FormData): Promise<A
 }
 
 // ---------- Products ----------
+const variantRowSchema = z.object({
+  id: z.string().optional(), label: z.string().trim().min(1).max(40),
+  price: z.string().optional().default(""), oldPrice: z.string().optional().default(""), inStock: z.boolean().optional().default(true),
+});
+
 const productSchema = z.object({
   id: z.string().uuid().optional().or(z.literal("")),
   name: z.string().trim().min(2, "Product name is too short").max(120),
@@ -50,7 +55,28 @@ const productSchema = z.object({
   old_price: z.string().optional().default(""),
   badge: z.enum(["hot", "offer", "new", ""]).optional().default(""),
   images: z.string().optional().default("[]"),
+  specs: z.string().optional().default(""),
+  variants: z.string().optional().default("[]"),
 });
+
+function parseSpecs(text: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const line of text.split("\n")) {
+    const idx = line.indexOf(":");
+    if (idx < 1) continue;
+    const key = line.slice(0, idx).trim().slice(0, 60);
+    const value = line.slice(idx + 1).trim().slice(0, 200);
+    if (key && value) out[key] = value;
+  }
+  return out;
+}
+
+function parseMoney(raw: string): number | null {
+  const t = raw.trim();
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isNaN(n) || n < 0 ? null : Math.round(n * 100) / 100;
+}
 
 export async function saveProduct(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const { db, business } = await bizDb();
@@ -61,18 +87,36 @@ export async function saveProduct(_prev: ActionState, fd: FormData): Promise<Act
   let images: string[] = [];
   try { images = JSON.parse(v.images).filter((u: unknown) => typeof u === "string" && u.startsWith("https://res.cloudinary.com/")).slice(0, 8); } catch {}
 
+  let variantRows: z.infer<typeof variantRowSchema>[] = [];
+  try {
+    const raw = JSON.parse(v.variants);
+    const check = z.array(variantRowSchema).max(20).safeParse(raw);
+    if (check.success) variantRows = check.data;
+  } catch {}
+
   let price: number | null = null;
   let oldPrice: number | null = null;
   if (v.price_type !== "contact") {
-    const n = Number(v.price);
-    if (!v.price || Number.isNaN(n) || n < 0) return fail("Enter a valid price.");
-    price = Math.round(n * 100) / 100;
+    if (!v.price.trim()) return fail("Enter a base price.");
+    const n = parseMoney(v.price);
+    if (n === null) return fail("Enter a valid price.");
+    price = n;
+    if (v.old_price.trim()) {
+      oldPrice = parseMoney(v.old_price);
+      if (oldPrice === null) return fail("Enter a valid old price.");
+      if (oldPrice <= price) return fail("Old price must be higher than the current price.");
+    }
   }
-  if (v.old_price.trim()) {
-    const n = Number(v.old_price);
-    if (Number.isNaN(n) || n <= 0) return fail("Enter a valid old price.");
-    oldPrice = Math.round(n * 100) / 100;
-    if (price !== null && oldPrice <= price) return fail("Old price must be higher than the current price.");
+
+  const variants: { label: string; price: number | null; old_price: number | null; in_stock: boolean; sort_order: number }[] = [];
+  for (let i = 0; i < variantRows.length; i++) {
+    const r = variantRows[i];
+    const vp = parseMoney(r.price);
+    if (r.price.trim() && vp === null) return fail(`Enter a valid price for "${r.label}".`);
+    const vop = parseMoney(r.oldPrice);
+    if (r.oldPrice.trim() && vop === null) return fail(`Enter a valid old price for "${r.label}".`);
+    if (vp !== null && vop !== null && vop <= vp) return fail(`Old price must be higher than the price for "${r.label}".`);
+    variants.push({ label: r.label.trim(), price: vp, old_price: vop, in_stock: r.inStock, sort_order: i });
   }
 
   const inStock = fd.get("in_stock") === "on";
@@ -80,26 +124,35 @@ export async function saveProduct(_prev: ActionState, fd: FormData): Promise<Act
   const base = {
     business_id: business.id, category_id: v.category_id || null, name: v.name, description: v.description || null,
     price, old_price: oldPrice, price_type: v.price_type, badge: v.badge || null, images, in_stock: inStock, status,
+    specs: parseSpecs(v.specs),
   };
 
-  if (v.id) {
-    const { error } = await db.from("products").update(base).eq("id", v.id).eq("business_id", business.id);
+  let productId = v.id || "";
+  if (productId) {
+    const { error } = await db.from("products").update(base).eq("id", productId).eq("business_id", business.id);
     if (error) return fail(readableDbError(error.message, error.code));
-    revalidatePath("/dashboard/products");
-    return done("Product saved.");
+  } else {
+    const productSlugBase = slugify(v.name) || "product";
+    let slug = productSlugBase;
+    for (let i = 0; i < 5; i++) {
+      const { data: taken } = await db.from("products").select("id").eq("business_id", business.id).eq("slug", slug).maybeSingle();
+      if (!taken) break;
+      slug = `${productSlugBase}-${i + 2}`;
+    }
+    const { data: created, error } = await db.from("products").insert({ ...base, slug }).select("id").single();
+    if (error || !created) return fail(readableDbError(error?.message, error?.code));
+    productId = created.id;
   }
 
-  const productSlugBase = slugify(v.name) || "product";
-  let slug = productSlugBase;
-  for (let i = 0; i < 5; i++) {
-    const { data: taken } = await db.from("products").select("id").eq("business_id", business.id).eq("slug", slug).maybeSingle();
-    if (!taken) break;
-    slug = `${productSlugBase}-${i + 2}`;
+  // Sync variants: replace the set each save (small lists, simplest to keep correct).
+  await db.from("product_variants").delete().eq("product_id", productId);
+  if (variants.length) {
+    const { error: vError } = await db.from("product_variants").insert(variants.map((r) => ({ ...r, product_id: productId })));
+    if (vError) return fail(readableDbError(vError.message, vError.code));
   }
 
-  const { error } = await db.from("products").insert({ ...base, slug });
-  if (error) return fail(readableDbError(error.message, error.code));
   revalidatePath("/dashboard/products");
+  if (v.id) return done("Product saved.");
   redirect("/dashboard/products");
 }
 
@@ -146,7 +199,6 @@ export async function changePassword(_prev: ActionState, fd: FormData): Promise<
   if (!user.email) return fail("Your account has no email on file.");
 
   const db = await createClient();
-  // Re-verify identity before allowing the change; wrong password leaves the session untouched.
   const { error: verifyError } = await db.auth.signInWithPassword({ email: user.email, password: parsed.data.current_password });
   if (verifyError) return fail("Current password is incorrect.");
 

@@ -1,0 +1,14 @@
+.pulse { display: block; border-radius: var(--radius-sm); background: linear-gradient(100deg, var(--color-sage) 30%, #eef1e9 50%, var(--color-sage) 70%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+@keyframes shimmer { 0% { background-position: 150% 0; } 100% { background-position: -50% 0; } }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; background: var(--color-sage); } }
+
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 640px) { .grid { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
+@media (min-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1200px) { .grid { grid-template-columns: repeat(6, 1fr); } }
+
+.card { border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; background: var(--white); }
+.media { aspect-ratio: 1 / 1; border-radius: 0; }
+.body { padding: 10px 12px 12px; display: grid; gap: 8px; }
+.line { height: 13px; border-radius: 4px; }
+.lineSm { height: 16px; border-radius: 4px; margin-top: 2px; }

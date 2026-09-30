@@ -5,13 +5,14 @@ export type Product = {
   slug: string;
   name: string;
   price: number;
-  oldPrice?: number | null; // when set and higher than price, shown struck through with a % badge
+  oldPrice?: number | null;
   badge?: ProductBadge | null;
   business: string;
+  businessId: string;
   location: string;
   category: string;
   imageUrl?: string | null;
-  whatsapp: string; // business WhatsApp, set at registration
+  whatsapp: string;
 };
 
 export type HeroSlide = {
@@ -22,5 +23,3 @@ export type HeroSlide = {
   ctaLabel?: string;
   href?: string;
 };
-
-export type Shop = { id: string; slug: string; name: string; location: string; category: string; products: number; verified: boolean };

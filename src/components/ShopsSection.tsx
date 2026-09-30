@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { BadgeCheck, MapPin, ChevronRight } from "lucide-react";
-import { mockShops } from "@/lib/mock";
+import Image from "next/image";
+import { BadgeCheck, MapPin, ChevronRight, Store as StoreIcon } from "lucide-react";
+import type { Shop } from "@/lib/catalog";
 import styles from "./ShopsSection.module.css";
 
-// Shops link to /stores until store pages exist (Session 6).
-export default function ShopsSection() {
+export default function ShopsSection({ shops }: { shops: Shop[] }) {
+  if (shops.length === 0) return null;
   return (
     <section className={`container ${styles.section}`}>
       <div className={styles.card}>
@@ -13,12 +14,14 @@ export default function ShopsSection() {
           <Link href="/stores" className={styles.all}>See all<ChevronRight size={16} aria-hidden="true" /></Link>
         </header>
         <ul className={styles.grid}>
-          {mockShops.map((s) => (
+          {shops.map((s) => (
             <li key={s.id}>
-              <Link href="/stores" className={styles.shop}>
-                <span className={styles.avatar} aria-hidden="true">{s.name.slice(0, 2).toUpperCase()}</span>
+              <Link href={`/store/${s.slug}`} className={styles.shop}>
+                <span className={styles.avatar} aria-hidden="true">
+                  {s.logoUrl ? <Image src={s.logoUrl} alt="" width={46} height={46} className={styles.avatarImg} /> : <StoreIcon size={20} />}
+                </span>
                 <span className={styles.info}>
-                  <strong>{s.name}{s.verified && <BadgeCheck size={16} className={styles.verified} aria-label="Verified" />}</strong>
+                  <strong>{s.name}<BadgeCheck size={16} className={styles.verified} aria-label="Active shop" /></strong>
                   <span className={styles.meta}><MapPin size={12} aria-hidden="true" />{s.location} &middot; {s.products} products</span>
                 </span>
               </Link>
