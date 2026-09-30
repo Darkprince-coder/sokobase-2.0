@@ -9,9 +9,10 @@ export const metadata: Metadata = { title: "Add product" };
 export default async function NewProductPage() {
   const { supabase, business } = await requireBusiness();
   if (!business) return null;
-  const [usage, { data: categories }] = await Promise.all([
+  const [usage, { data: categories }, { data: subcategories }] = await Promise.all([
     getPlanUsage(supabase, business.id),
     supabase.from("categories").select("id, name").eq("active", true).order("sort_order"),
+    supabase.from("subcategories").select("id, name, category_id").eq("active", true).order("sort_order"),
   ]);
   const remaining = usage.limit === null ? null : usage.limit - usage.count;
 
@@ -19,7 +20,7 @@ export default async function NewProductPage() {
     <>
       <header className={styles.head}><h1>Add product</h1></header>
       <section className={styles.panel}>
-        <ProductForm categories={categories ?? []} remaining={remaining} />
+        <ProductForm categories={categories ?? []} subcategories={subcategories ?? []} remaining={remaining} />
       </section>
     </>
   );

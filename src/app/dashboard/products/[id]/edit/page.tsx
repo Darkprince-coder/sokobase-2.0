@@ -13,11 +13,12 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   const { supabase, business } = await requireBusiness();
   if (!business) return null;
 
-  const [{ data: product }, { data: variants }, { data: categories }] = await Promise.all([
-    supabase.from("products").select("id, name, description, category_id, price, old_price, price_type, badge, images, in_stock, status, specs")
+  const [{ data: product }, { data: variants }, { data: categories }, { data: subcategories }] = await Promise.all([
+    supabase.from("products").select("id, name, description, category_id, subcategory_id, price, old_price, price_type, badge, images, in_stock, status, specs")
       .eq("id", id).eq("business_id", business.id).maybeSingle(),
     supabase.from("product_variants").select("id, label, price, old_price, in_stock").eq("product_id", id).order("sort_order"),
     supabase.from("categories").select("id, name").eq("active", true).order("sort_order"),
+    supabase.from("subcategories").select("id, name, category_id").eq("active", true).order("sort_order"),
   ]);
   if (!product) notFound();
 
@@ -31,7 +32,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     <>
       <header className={styles.head}><h1>Edit product</h1></header>
       <section className={styles.panel}>
-        <ProductForm product={full} categories={categories ?? []} remaining={null} />
+        <ProductForm product={full} categories={categories ?? []} subcategories={subcategories ?? []} remaining={null} />
       </section>
     </>
   );

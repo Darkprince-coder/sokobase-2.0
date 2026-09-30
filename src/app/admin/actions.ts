@@ -32,7 +32,7 @@ export async function createInvite(_prev: ActionState, fd: FormData): Promise<Ac
     });
     if (!error) {
       revalidatePath("/admin/invites");
-       return done("Invite created.", { code, link: `${site.portalUrl}/join?code=${code}`, expires });
+      return done("Invite created.", { code, link: `${site.portalUrl}/join?code=${code}`, expires });
     }
     if (error.code !== "23505") return fail("Could not create the invite.");
   }
@@ -66,7 +66,6 @@ const renewSchema = z.object({
   payment_note: z.string().trim().max(120).optional(),
 });
 
-// Extends from the current end date if the shop is still live, otherwise from today.
 export async function renewSubscription(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const { db, user } = await adminDb();
   const parsed = renewSchema.safeParse(fields(fd));
@@ -90,12 +89,8 @@ export async function renewSubscription(_prev: ActionState, fd: FormData): Promi
   return done(`Subscription active until ${ends.toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}.`);
 }
 
-const passwordSchema = z.object({
-  business_id: uuid,
-  password: z.string().min(10, "Use at least 10 characters").max(72),
-});
+const passwordSchema = z.object({ business_id: uuid, password: z.string().min(10, "Use at least 10 characters").max(72) });
 
-// Manual password reset (no email flow yet). Tell the owner the new password on WhatsApp.
 export async function resetOwnerPassword(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const { db } = await adminDb();
   const parsed = passwordSchema.safeParse(fields(fd));
@@ -109,8 +104,7 @@ export async function resetOwnerPassword(_prev: ActionState, fd: FormData): Prom
 
 // ---------- Plans ----------
 const planSchema = z.object({
-  id: uuid,
-  name: z.string().trim().min(2, "Plan name is too short").max(30),
+  id: uuid, name: z.string().trim().min(2, "Plan name is too short").max(30),
   price_kes: z.coerce.number().int().min(0, "Price cannot be negative").max(1000000),
   duration_days: z.coerce.number().int().min(1).max(365),
 });
@@ -148,7 +142,7 @@ export async function saveCategory(_prev: ActionState, fd: FormData): Promise<Ac
   const base = { name: v.name, icon: v.icon || null, sort_order: v.sort_order, active: fd.get("active") === "on" };
 
   if (v.id) {
-    const { error } = await db.from("categories").update(base).eq("id", v.id); // slug is never changed after creation (SEO)
+    const { error } = await db.from("categories").update(base).eq("id", v.id);
     if (error) return fail("Could not save the category.");
   } else {
     const slug = slugify(v.slug || v.name);
@@ -159,6 +153,45 @@ export async function saveCategory(_prev: ActionState, fd: FormData): Promise<Ac
   revalidatePath("/admin/categories");
   refreshPublic();
   return done(v.id ? "Category saved." : "Category added.");
+}
+
+// ---------- Subcategories (curated, nested under a category) ----------
+const subcategorySchema = z.object({
+  id: uuid.optional().or(z.literal("")),
+  category_id: uuid,
+  name: z.string().trim().min(2, "Name is too short").max(40),
+  sort_order: z.coerce.number().int().min(0).max(999),
+});
+
+export async function saveSubcategory(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const { db } = await adminDb();
+  const parsed = subcategorySchema.safeParse(fields(fd));
+  if (!parsed.success) return fail(firstError(parsed.error));
+  const v = parsed.data;
+  const base = { name: v.name, sort_order: v.sort_order, active: fd.get("active") === "on" };
+
+  if (v.id) {
+    const { error } = await db.from("subcategories").update(base).eq("id", v.id).eq("category_id", v.category_id);
+    if (error) return fail("Could not save the subcategory.");
+  } else {
+    const slug = slugify(v.name);
+    if (slug.length < 2) return fail("Enter a valid name.");
+    const { error } = await db.from("subcategories").insert({ ...base, category_id: v.category_id, slug });
+    if (error) return fail(error.code === "23505" ? "A subcategory with that name already exists here." : "Could not add the subcategory.");
+  }
+  revalidatePath(`/admin/categories/${v.category_id}/subcategories`);
+  refreshPublic();
+  return done(v.id ? "Subcategory saved." : "Subcategory added.");
+}
+
+export async function deleteSubcategory(fd: FormData) {
+  const { db } = await adminDb();
+  const id = uuid.safeParse(fd.get("id"));
+  const categoryId = uuid.safeParse(fd.get("category_id"));
+  if (!id.success || !categoryId.success) return;
+  await db.from("subcategories").delete().eq("id", id.data).eq("category_id", categoryId.data);
+  revalidatePath(`/admin/categories/${categoryId.data}/subcategories`);
+  refreshPublic();
 }
 
 // ---------- Hero slides ----------

@@ -35,13 +35,16 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
   if (invite.used_at) return <InvalidInvite text="This invite has already been used. Ask SokoBase for a new one if you need another shop." />;
   if (new Date(invite.expires_at).getTime() < Date.now()) return <InvalidInvite text="This invite link has expired. Ask SokoBase for a new one." />;
 
-  const { data: categories } = await db.from("categories").select("id, name").eq("active", true).order("sort_order");
+  const [{ data: categories }, { data: counties }] = await Promise.all([
+    db.from("categories").select("id, name").eq("active", true).order("sort_order"),
+    db.from("counties").select("id, name").order("sort_order"),
+  ]);
   const plan = Array.isArray(invite.plans) ? invite.plans[0] : invite.plans;
 
   return (
     <AuthCard title="Set up your shop" text={plan ? `You're joining on the ${plan.name} plan. This takes about two minutes.` : "This takes about two minutes."}>
       <p className={styles.meta} style={{ marginBottom: -4 }}>Everything except the logo is required.</p>
-      <RegisterForm code={code} categories={categories ?? []} />
+      <RegisterForm code={code} categories={categories ?? []} counties={counties ?? []} />
     </AuthCard>
   );
 }

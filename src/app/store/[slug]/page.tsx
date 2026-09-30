@@ -28,7 +28,8 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
         </span>
         <div className={styles.info}>
           <h1>{store.name}</h1>
-          <p className={styles.meta}><MapPin size={13} aria-hidden="true" />{store.location}{store.category ? ` \u00b7 ${store.category}` : ""}</p>
+          <p className={styles.meta}><MapPin size={13} aria-hidden="true" />{store.location}{store.county ? `, ${store.county}` : ""}</p>
+          {store.categories.length > 0 && <div className={styles.cats}>{store.categories.map((c) => <span key={c} className={styles.catChip}>{c}</span>)}</div>}
           {store.description && <p className={styles.desc}>{store.description}</p>}
         </div>
         <Button href={whatsappLink(store.whatsapp, `Hi ${store.name}, I found your shop on SokoBase.`)} external icon={<MessageCircle size={16} />}>Chat on WhatsApp</Button>

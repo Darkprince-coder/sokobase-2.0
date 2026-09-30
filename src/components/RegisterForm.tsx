@@ -9,16 +9,24 @@ import type { ActionState } from "@/lib/action-state";
 import styles from "./RegisterForm.module.css";
 
 type Category = { id: string; name: string };
+type County = { id: string; name: string };
+const MAX_CATEGORIES = 3;
 
-export default function RegisterForm({ code, categories }: { code: string; categories: Category[] }) {
+export default function RegisterForm({ code, categories, counties }: { code: string; categories: Category[]; counties: County[] }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(registerBusiness, {});
   const [logoUrl, setLogoUrl] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+
+  const toggleCategory = (id: string) => {
+    setCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < MAX_CATEGORIES ? [...prev, id] : prev));
+  };
 
   return (
     <form action={action} className={styles.form} noValidate>
       <input type="hidden" name="invite_code" value={code} />
       <input type="hidden" name="logo_url" value={logoUrl} />
+      <input type="hidden" name="category_ids" value={JSON.stringify(categoryIds)} />
 
       <div className={styles.field}>
         <span>Business logo</span>
@@ -30,17 +38,33 @@ export default function RegisterForm({ code, categories }: { code: string; categ
         <input type="text" name="name" maxLength={80} required autoComplete="organization" />
       </label>
 
+      <div className={styles.field}>
+        <span>Categories <span className={styles.hint}>(choose up to {MAX_CATEGORIES})</span></span>
+        <div className={styles.checkGrid}>
+          {categories.map((c) => {
+            const checked = categoryIds.includes(c.id);
+            const disabled = !checked && categoryIds.length >= MAX_CATEGORIES;
+            return (
+              <label key={c.id} className={`${styles.checkTile} ${checked ? styles.checkTileOn : ""}`}>
+                <input type="checkbox" checked={checked} disabled={disabled} onChange={() => toggleCategory(c.id)} />
+                {c.name}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
       <div className={styles.grid2}>
         <label className={styles.field}>
-          <span>Category</span>
-          <select name="category_id" required defaultValue="">
-            <option value="" disabled>Choose one</option>
-            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          <span>County</span>
+          <select name="county_id" required defaultValue="">
+            <option value="" disabled>Choose your county</option>
+            {counties.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </label>
         <label className={styles.field}>
-          <span>Location</span>
-          <input type="text" name="location" maxLength={80} placeholder="e.g. Nairobi CBD" required />
+          <span>Specific location</span>
+          <input type="text" name="location" maxLength={80} placeholder="e.g. Nairobi CBD, Tom Mboya St" required />
         </label>
       </div>
 

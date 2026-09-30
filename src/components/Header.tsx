@@ -6,13 +6,14 @@ import { Heart } from "lucide-react";
 import Logo from "./Logo";
 import SearchBar from "./SearchBar";
 import Button from "./Button";
-import { categories } from "@/lib/categories";
+import { useCategories } from "@/lib/categories-context";
 import { useWishlist } from "@/lib/wishlist";
 import styles from "./Header.module.css";
 
 export default function Header() {
   const pathname = usePathname();
   const { count } = useWishlist();
+  const categories = useCategories();
   return (
     <>
       <div className={styles.topbar}>
@@ -45,7 +46,7 @@ export default function Header() {
           <div className={`container ${styles.catInner}`}>
             <Link href="/products?badge=hot" className={styles.hot}>Hot deals</Link>
             {categories.slice(0, 8).map((c) => (
-              <Link key={c.slug} href={`/products?category=${c.slug}`}>{c.label}</Link>
+              <Link key={c.slug} href={`/products?category=${c.slug}`}>{c.name}</Link>
             ))}
           </div>
         </nav>

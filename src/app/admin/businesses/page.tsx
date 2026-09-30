@@ -11,6 +11,7 @@ export const metadata: Metadata = { title: "Businesses" };
 const FILTERS = ["all", "active", "expired", "suspended"] as const;
 type Filter = (typeof FILTERS)[number];
 const one = <T,>(v: T | T[] | null | undefined): T | undefined => (Array.isArray(v) ? v[0] : v ?? undefined);
+const many = <T,>(v: T | T[] | null | undefined): T[] => (Array.isArray(v) ? v : v ? [v] : []);
 
 export default async function BusinessesPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string }> }) {
   const sp = await searchParams;
@@ -18,7 +19,7 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
   const term = (sp.q ?? "").replace(/[%,()*\\]/g, "").trim().slice(0, 60);
   const { db } = await adminDb();
 
-  let query = db.from("businesses").select("id, slug, name, location, status, created_at, products(count), categories(name)").order("created_at", { ascending: false }).limit(500);
+  let query = db.from("businesses").select("id, slug, name, location, status, created_at, products(count), counties(name), business_categories(categories(name))").order("created_at", { ascending: false }).limit(500);
   if (term) query = query.ilike("name", `%${term}%`);
   const [{ data: businesses }, { data: subs }] = await Promise.all([
     query,
@@ -28,12 +29,13 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
   const latest = new Map<string, NonNullable<typeof subs>[number]>();
   for (const s of subs ?? []) if (!latest.has(s.business_id)) latest.set(s.business_id, s);
 
-  const rows = (businesses ?? []).map((b) => {
+  const rows = (businesses ?? []).map((b: any) => {
     const sub = latest.get(b.id);
     const live = !!sub && sub.status === "active" && new Date(sub.ends_at).getTime() > Date.now();
     const state = b.status === "suspended" ? "suspended" : live ? "active" : "expired";
     const plan = one(sub?.plans);
-    return { b, sub, plan, state: state as "active" | "expired" | "suspended", count: one(b.products)?.count ?? 0, category: one(b.categories)?.name };
+    const cats = many(b.business_categories).map((bc: any) => one(bc.categories)?.name).filter(Boolean);
+    return { b, sub, plan, state: state as "active" | "expired" | "suspended", count: one(b.products)?.count ?? 0, county: one(b.counties)?.name, cats };
   }).filter((r) => filter === "all" || r.state === filter);
 
   const link = (f: Filter) => `/admin/businesses?${new URLSearchParams({ ...(f !== "all" ? { status: f } : {}), ...(term ? { q: term } : {}) })}`;
@@ -53,12 +55,12 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
         {rows.length === 0 ? <p className={styles.empty}>No businesses match.</p> : (
           <div className={styles.tableWrap}>
             <table className={styles.table}>
-              <thead><tr><th>Business</th><th>Location</th><th>Plan</th><th>Products</th><th>Expires</th><th>Status</th></tr></thead>
+              <thead><tr><th>Business</th><th>County</th><th>Plan</th><th>Products</th><th>Expires</th><th>Status</th></tr></thead>
               <tbody>
-                {rows.map(({ b, sub, plan, state, count, category }) => (
+                {rows.map(({ b, sub, plan, state, count, county, cats }) => (
                   <tr key={b.id}>
-                    <td><Link href={`/admin/businesses/${b.id}`}>{b.name}</Link><div className={styles.muted} style={{ fontSize: 12 }}>{category ?? "No category"}</div></td>
-                    <td>{b.location}</td>
+                    <td><Link href={`/admin/businesses/${b.id}`}>{b.name}</Link><div className={styles.muted} style={{ fontSize: 12 }}>{cats.length ? cats.join(", ") : "No category"}</div></td>
+                    <td>{county ?? <span className={styles.muted}>-</span>}</td>
                     <td>{plan?.name ?? <span className={styles.muted}>None</span>}</td>
                     <td className={styles.mono}>{count}{plan?.product_limit ? ` / ${plan.product_limit}` : ""}</td>
                     <td>{sub ? formatDate(sub.ends_at) : <span className={styles.muted}>-</span>}</td>

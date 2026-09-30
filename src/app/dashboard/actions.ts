@@ -14,11 +14,12 @@ const firstError = (e: z.ZodError) => e.issues[0]?.message ?? "Check the form an
 const profileSchema = z.object({
   name: z.string().trim().min(2, "Business name is too short").max(80),
   description: z.string().trim().max(1000).optional().default(""),
-  category_id: z.string().uuid("Choose a category"),
+  county_id: z.string().uuid("Choose your county"),
   location: z.string().trim().min(2, "Enter a location").max(80),
   whatsapp: z.string().trim().min(9, "Enter a valid phone number"),
   logo_url: z.string().trim().max(500).optional().default(""),
   cover_url: z.string().trim().max(500).optional().default(""),
+  category_ids: z.string().optional().default("[]"),
 });
 
 export async function updateProfile(_prev: ActionState, fd: FormData): Promise<ActionState> {
@@ -29,11 +30,25 @@ export async function updateProfile(_prev: ActionState, fd: FormData): Promise<A
   const whatsapp = normalizeKePhone(v.whatsapp);
   if (!whatsapp) return fail("Enter a valid Kenyan WhatsApp number, e.g. 07XXXXXXXX.");
 
+  let categoryIds: string[] = [];
+  try {
+    const check = z.array(z.string().uuid()).min(1, "Choose at least one category").max(3, "Choose up to 3 categories").safeParse(JSON.parse(v.category_ids));
+    if (!check.success) return fail(check.error.issues[0]?.message ?? "Choose 1 to 3 categories.");
+    categoryIds = check.data;
+  } catch {
+    return fail("Choose at least one category.");
+  }
+
   const { error } = await db.from("businesses").update({
-    name: v.name, description: v.description || null, category_id: v.category_id, location: v.location,
+    name: v.name, description: v.description || null, county_id: v.county_id, location: v.location,
     whatsapp, logo_url: v.logo_url || null, cover_url: v.cover_url || null,
   }).eq("id", business.id);
   if (error) return fail(readableDbError(error.message, error.code));
+
+  // Simplest correct sync for a short list: replace the set each save.
+  await db.from("business_categories").delete().eq("business_id", business.id);
+  const { error: catError } = await db.from("business_categories").insert(categoryIds.map((category_id) => ({ business_id: business.id, category_id })));
+  if (catError) return fail(readableDbError(catError.message, catError.code));
 
   revalidatePath("/dashboard");
   return done("Shop profile saved.");
@@ -50,6 +65,7 @@ const productSchema = z.object({
   name: z.string().trim().min(2, "Product name is too short").max(120),
   description: z.string().trim().max(4000).optional().default(""),
   category_id: z.string().uuid().optional().or(z.literal("")),
+  subcategory_id: z.string().uuid().optional().or(z.literal("")),
   price_type: z.enum(["fixed", "from", "contact"]),
   price: z.string().optional().default(""),
   old_price: z.string().optional().default(""),
@@ -83,6 +99,12 @@ export async function saveProduct(_prev: ActionState, fd: FormData): Promise<Act
   const parsed = productSchema.safeParse(fields(fd));
   if (!parsed.success) return fail(firstError(parsed.error));
   const v = parsed.data;
+
+  if (v.subcategory_id && !v.category_id) return fail("Choose a category before choosing a subcategory.");
+  if (v.subcategory_id) {
+    const { data: sub } = await db.from("subcategories").select("category_id").eq("id", v.subcategory_id).maybeSingle();
+    if (!sub || sub.category_id !== v.category_id) return fail("That subcategory doesn't belong to the chosen category.");
+  }
 
   let images: string[] = [];
   try { images = JSON.parse(v.images).filter((u: unknown) => typeof u === "string" && u.startsWith("https://res.cloudinary.com/")).slice(0, 8); } catch {}
@@ -122,9 +144,9 @@ export async function saveProduct(_prev: ActionState, fd: FormData): Promise<Act
   const inStock = fd.get("in_stock") === "on";
   const status = fd.get("status") === "draft" ? "draft" : "published";
   const base = {
-    business_id: business.id, category_id: v.category_id || null, name: v.name, description: v.description || null,
-    price, old_price: oldPrice, price_type: v.price_type, badge: v.badge || null, images, in_stock: inStock, status,
-    specs: parseSpecs(v.specs),
+    business_id: business.id, category_id: v.category_id || null, subcategory_id: v.subcategory_id || null,
+    name: v.name, description: v.description || null, price, old_price: oldPrice, price_type: v.price_type,
+    badge: v.badge || null, images, in_stock: inStock, status, specs: parseSpecs(v.specs),
   };
 
   let productId = v.id || "";
@@ -144,7 +166,6 @@ export async function saveProduct(_prev: ActionState, fd: FormData): Promise<Act
     productId = created.id;
   }
 
-  // Sync variants: replace the set each save (small lists, simplest to keep correct).
   await db.from("product_variants").delete().eq("product_id", productId);
   if (variants.length) {
     const { error: vError } = await db.from("product_variants").insert(variants.map((r) => ({ ...r, product_id: productId })));

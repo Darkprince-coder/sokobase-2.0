@@ -1,8 +1,12 @@
+"use client";
 import Link from "next/link";
-import { categories } from "@/lib/categories";
+import { useCategories } from "@/lib/categories-context";
 import styles from "./FilterBar.module.css";
 
-export default function FilterBar({ category, badge }: { category?: string; badge?: string }) {
+type Subcategory = { slug: string; name: string };
+
+export default function FilterBar({ category, subcategory, badge, subcategories = [] }: { category?: string; subcategory?: string; badge?: string; subcategories?: Subcategory[] }) {
+  const categories = useCategories();
   const qs = (params: Record<string, string | undefined>) => {
     const sp = new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]);
     const s = sp.toString();
@@ -19,9 +23,17 @@ export default function FilterBar({ category, badge }: { category?: string; badg
       <div className={styles.row}>
         <Link href={qs({ badge })} className={!category ? styles.chipOn : styles.chip}>All categories</Link>
         {categories.map((c) => (
-          <Link key={c.slug} href={qs({ category: c.slug, badge })} className={category === c.slug ? styles.chipOn : styles.chip}>{c.label}</Link>
+          <Link key={c.slug} href={qs({ category: c.slug, badge })} className={category === c.slug ? styles.chipOn : styles.chip}>{c.name}</Link>
         ))}
       </div>
+      {category && subcategories.length > 0 && (
+        <div className={styles.row}>
+          <Link href={qs({ category, badge })} className={!subcategory ? styles.chipOn : styles.chip}>All {categories.find((c) => c.slug === category)?.name ?? ""}</Link>
+          {subcategories.map((s) => (
+            <Link key={s.slug} href={qs({ category, subcategory: s.slug, badge })} className={subcategory === s.slug ? styles.chipOn : styles.chip}>{s.name}</Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

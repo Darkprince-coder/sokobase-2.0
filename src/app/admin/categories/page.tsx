@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { adminDb } from "@/lib/admin";
 import { saveCategory } from "@/app/admin/actions";
 import ActionForm from "@/components/admin/ActionForm";
@@ -9,6 +11,7 @@ export const metadata: Metadata = { title: "Categories" };
 export default async function CategoriesPage() {
   const { db } = await adminDb();
   const { data: categories } = await db.from("categories").select("*").order("sort_order");
+
   return (
     <>
       <header className={styles.head}><h1>Categories</h1><p className={styles.sub}>Businesses and products are grouped by these. Turn one off to hide it from new shops without deleting it. Slugs never change after creation, to protect Google rankings.</p></header>
@@ -39,6 +42,9 @@ export default async function CategoriesPage() {
               </div>
               <label className={styles.check}><input type="checkbox" name="active" defaultChecked={c.active} /> Active</label>
             </ActionForm>
+            <Link href={`/admin/categories/${c.id}/subcategories`} className={styles.all} style={{ display: "inline-flex", alignItems: "center", gap: 2, marginTop: 10 }}>
+              Manage subcategories<ChevronRight size={15} aria-hidden="true" />
+            </Link>
           </div>
         ))}
       </section>

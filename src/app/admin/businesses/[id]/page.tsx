@@ -14,13 +14,14 @@ import styles from "@/components/admin/admin.module.css";
 
 export const metadata: Metadata = { title: "Business" };
 const one = <T,>(v: T | T[] | null | undefined): T | undefined => (Array.isArray(v) ? v[0] : v ?? undefined);
+const many = <T,>(v: T | T[] | null | undefined): T[] => (Array.isArray(v) ? v : v ? [v] : []);
 
 export default async function BusinessDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!z.string().uuid().safeParse(id).success) notFound();
   const { db } = await adminDb();
 
-  const { data: b } = await db.from("businesses").select("id, owner_id, slug, name, description, location, whatsapp, status, created_at, products(count), categories(name)").eq("id", id).maybeSingle();
+  const { data: b } = await db.from("businesses").select("id, owner_id, slug, name, description, location, whatsapp, status, created_at, products(count), counties(name), business_categories(categories(name))").eq("id", id).maybeSingle();
   if (!b) notFound();
 
   const [{ data: subs }, { data: plans }, { data: owner }] = await Promise.all([
@@ -34,6 +35,7 @@ export default async function BusinessDetail({ params }: { params: Promise<{ id:
   const state = b.status === "suspended" ? "suspended" : current ? "active" : "expired";
   const defaultPlan = currentPlan?.id ?? plans?.[0]?.id;
   const nextStatus = b.status === "active" ? "suspended" : "active";
+  const categoryNames = many((b as any).business_categories).map((bc: any) => one(bc.categories)?.name).filter(Boolean);
 
   return (
     <>
@@ -48,8 +50,9 @@ export default async function BusinessDetail({ params }: { params: Promise<{ id:
           <div className={styles.dl}>
             <div><span>Shop link</span><span className={styles.mono}>/store/{b.slug}</span></div>
             <div><span>Owner email</span><span>{owner.user?.email ?? "-"}</span></div>
+            <div><span>County</span><span>{one((b as any).counties)?.name ?? "-"}</span></div>
             <div><span>Location</span><span>{b.location}</span></div>
-            <div><span>Category</span><span>{one(b.categories)?.name ?? "-"}</span></div>
+            <div><span>Categories</span><span>{categoryNames.length ? categoryNames.join(", ") : "-"}</span></div>
             <div><span>WhatsApp</span><span className={styles.mono}>{b.whatsapp}</span></div>
             <div><span>Products</span><span className={styles.mono}>{one(b.products)?.count ?? 0}{currentPlan?.product_limit ? ` / ${currentPlan.product_limit}` : ""}</span></div>
             <div><span>Joined</span><span>{formatDate(b.created_at)}</span></div>

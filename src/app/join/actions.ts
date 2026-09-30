@@ -11,7 +11,8 @@ const schema = z
   .object({
     invite_code: z.string().regex(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/, "Invalid invite code."),
     name: z.string().trim().min(2, "Business name is too short").max(80),
-    category_id: z.string().uuid("Choose a category"),
+    category_ids: z.string().optional().default("[]"),
+    county_id: z.string().uuid("Choose your county"),
     location: z.string().trim().min(2, "Enter a location").max(80),
     whatsapp: z.string().trim().min(9, "Enter a valid phone number"),
     email: z.string().trim().toLowerCase().email("Enter a valid email"),
@@ -27,12 +28,21 @@ export async function registerBusiness(_prev: ActionState, fd: FormData): Promis
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form and try again." };
   const v = parsed.data;
 
+  let categoryIds: string[] = [];
+  try {
+    const raw = JSON.parse(v.category_ids);
+    const check = z.array(z.string().uuid()).min(1, "Choose at least one category").max(3, "Choose up to 3 categories").safeParse(raw);
+    if (!check.success) return { error: check.error.issues[0]?.message ?? "Choose 1 to 3 categories." };
+    categoryIds = check.data;
+  } catch {
+    return { error: "Choose at least one category." };
+  }
+
   const whatsapp = normalizeKePhone(v.whatsapp);
   if (!whatsapp) return { error: "Enter a valid Kenyan WhatsApp number, e.g. 07XXXXXXXX." };
 
   const db = createAdminClient();
 
-  // Atomically claim the invite: it can only ever be used once, even with two simultaneous submits.
   const { data: invite, error: claimError } = await db
     .from("invites")
     .update({ used_at: new Date().toISOString() })
@@ -45,7 +55,6 @@ export async function registerBusiness(_prev: ActionState, fd: FormData): Promis
 
   const releaseInvite = () => db.from("invites").update({ used_at: null }).eq("id", invite.id);
 
-  // Unique slug for the shop URL: sokobase.co.ke/store/<slug>
   const base = slugify(v.name) || "shop";
   let slug = base;
   for (let i = 0; i < 6; i++) {
@@ -55,9 +64,7 @@ export async function registerBusiness(_prev: ActionState, fd: FormData): Promis
     if (i === 5) { await releaseInvite(); return { error: "Could not create a shop link. Try a different business name." }; }
   }
 
-  const { data: created, error: userError } = await db.auth.admin.createUser({
-    email: v.email, password: v.password, email_confirm: true,
-  });
+  const { data: created, error: userError } = await db.auth.admin.createUser({ email: v.email, password: v.password, email_confirm: true });
   if (userError || !created.user) {
     await releaseInvite();
     return { error: userError?.message.includes("already") ? "An account with that email already exists." : "Could not create the account." };
@@ -72,11 +79,17 @@ export async function registerBusiness(_prev: ActionState, fd: FormData): Promis
 
   const { data: business, error: bizError } = await db
     .from("businesses")
-    .insert({ owner_id: userId, slug, name: v.name, category_id: v.category_id, location: v.location, whatsapp, logo_url: v.logo_url || null, status: "active" })
+    .insert({ owner_id: userId, slug, name: v.name, county_id: v.county_id, location: v.location, whatsapp, logo_url: v.logo_url || null, status: "active" })
     .select("id").single();
   if (bizError || !business) {
     await db.auth.admin.deleteUser(userId); await releaseInvite();
     return { error: "Could not create your shop. Try again." };
+  }
+
+  const { error: catError } = await db.from("business_categories").insert(categoryIds.map((category_id) => ({ business_id: business.id, category_id })));
+  if (catError) {
+    await db.from("businesses").delete().eq("id", business.id); await db.auth.admin.deleteUser(userId); await releaseInvite();
+    return { error: "Could not save your categories. Try again." };
   }
 
   const startsAt = new Date();
@@ -92,7 +105,6 @@ export async function registerBusiness(_prev: ActionState, fd: FormData): Promis
 
   await db.from("invites").update({ business_id: business.id }).eq("id", invite.id);
 
-  // Sign the new owner in immediately (sign-ups are disabled, so this is the only path in).
   const authed = await createClient();
   const { error: signInError } = await authed.auth.signInWithPassword({ email: v.email, password: v.password });
   if (signInError) redirect("/login");

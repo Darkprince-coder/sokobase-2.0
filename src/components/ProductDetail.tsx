@@ -28,6 +28,7 @@ export default function ProductDetail({ product }: { product: PD }) {
   }, [product, variant]);
 
   const specs = Object.entries(product.specs).filter(([, v]) => v);
+  const crumb = [product.category, product.subcategory].filter(Boolean).join(" / ");
 
   return (
     <div className={styles.layout}>
@@ -36,7 +37,12 @@ export default function ProductDetail({ product }: { product: PD }) {
       </div>
 
       <div className={styles.right}>
-        {product.category && <p className={styles.crumb}>{product.category}</p>}
+        {crumb && (
+          <p className={styles.crumb}>
+            {product.categorySlug ? <Link href={`/products?category=${product.categorySlug}`}>{product.category}</Link> : product.category}
+            {product.subcategory ? ` / ${product.subcategory}` : ""}
+          </p>
+        )}
         <h1 className={styles.name}>{product.name}</h1>
 
         <div className={styles.priceRow}>

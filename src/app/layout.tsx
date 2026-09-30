@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
 import { site } from "@/lib/site";
 import { jsonLdString, websiteJsonLd } from "@/lib/jsonld";
+import { createPublicClient } from "@/lib/supabase/public";
 
 const display = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", display: "swap" });
 const body = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -34,12 +35,18 @@ export const viewport: Viewport = { themeColor: "#1F7A4D", width: "device-width"
 
 const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+async function getCategoriesLite() {
+  const { data } = await createPublicClient().from("categories").select("id, slug, name, icon").eq("active", true).order("sort_order");
+  return data ?? [];
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const categories = await getCategoriesLite();
   return (
     <html lang="en-KE" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body>
         <a href="#main" className="visually-hidden">Skip to content</a>
-        <Providers>
+        <Providers categories={categories}>
           <SiteChrome header={<Header />} footer={<Footer />} bottomNav={<BottomNav />}>
             {children}
           </SiteChrome>

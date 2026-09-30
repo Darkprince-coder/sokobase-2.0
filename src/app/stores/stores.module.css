@@ -12,3 +12,8 @@
 .empty { color: var(--ink-3); background: var(--white); border-radius: var(--radius-lg); padding: 60px 20px; text-align: center; }
 @media (min-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+.filterRow { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: 16px; padding-bottom: 2px; }
+.filterRow::-webkit-scrollbar { display: none; }
+.chip, .chipOn { flex: none; font-size: 13px; font-weight: 600; text-decoration: none; padding: 6px 13px; border-radius: var(--radius-pill); border: 1px solid var(--line); background: var(--white); color: var(--ink-2); }
+.chipOn { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
