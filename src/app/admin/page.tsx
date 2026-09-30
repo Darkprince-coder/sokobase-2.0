@@ -21,8 +21,8 @@ export default async function AdminOverview() {
   for (const s of live.data ?? []) {
     const cur = latest.get(s.business_id);
     if (!cur || s.ends_at > cur.ends_at) {
-      const plan = Array.isArray(s.plans) ? s.plans[0]?.name : s.plans?.name;
-      const name = Array.isArray(s.businesses) ? s.businesses[0]?.name : s.businesses?.name;
+      const plan = Array.isArray(s.plans) ? (s.plans[0] as any)?.name : (s.plans as any)?.name;
+      const name = Array.isArray(s.businesses) ? (s.businesses[0] as any)?.name : (s.businesses as any)?.name;
       latest.set(s.business_id, { ends_at: s.ends_at, plan: plan ?? "", name: name ?? "" });
     }
   }
