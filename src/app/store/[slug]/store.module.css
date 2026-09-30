@@ -1,8 +1,9 @@
 .page { padding-bottom: 40px; }
 .cover { position: relative; height: 160px; background: var(--color-primary-tint); }
 .coverImg { object-fit: cover; }
-.head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; padding-top: 18px; padding-bottom: 18px; }
-.logo { flex: none; width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: var(--color-primary-tint); color: var(--green-700); display: grid; place-items: center; border: 3px solid var(--white); margin-top: -36px; box-shadow: var(--shadow-1); }
+.head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; padding-top: 18px; padding-bottom: 18px; margin-top: 0; }
+.logo { flex: none; width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: var(--color-primary-tint); color: var(--green-700); display: grid; place-items: center; border: 3px solid var(--white); margin-top: 0; box-shadow: var(--shadow-1); }
+.cover + .head .logo { margin-top: -36px; }
 .logoImg { object-fit: cover; }
 .info { flex: 1; min-width: 200px; }
 .info h1 { font-size: 22px; }
