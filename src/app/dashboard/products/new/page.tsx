@@ -1,0 +1,26 @@
+import type { Metadata } from "next";
+import { requireBusiness } from "@/lib/auth";
+import { getPlanUsage } from "@/lib/dashboard";
+import ProductForm from "@/components/dashboard/ProductForm";
+import styles from "@/components/dashboard/dash.module.css";
+
+export const metadata: Metadata = { title: "Add product" };
+
+export default async function NewProductPage() {
+  const { supabase, business } = await requireBusiness();
+  if (!business) return null;
+  const [usage, { data: categories }] = await Promise.all([
+    getPlanUsage(supabase, business.id),
+    supabase.from("categories").select("id, name").eq("active", true).order("sort_order"),
+  ]);
+  const remaining = usage.limit === null ? null : usage.limit - usage.count;
+
+  return (
+    <>
+      <header className={styles.head}><h1>Add product</h1></header>
+      <section className={styles.panel}>
+        <ProductForm categories={categories ?? []} remaining={remaining} />
+      </section>
+    </>
+  );
+}
