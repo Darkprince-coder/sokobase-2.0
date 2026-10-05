@@ -24,10 +24,18 @@ export default function Footer() {
           <h3>Sell</h3>
           <Link href="/sell">List your business</Link>
           <a href={`${site.portalUrl}/login`} rel="nofollow">Business sign in</a>
-          {site.supportWhatsapp && <a href={whatsappLink(site.supportWhatsapp, "Hi SokoBase")} target="_blank" rel="noopener noreferrer">Chat with SokoBase</a>}
+        </nav>
+        <nav aria-label="Help" className={styles.col}>
+          <h3>Help</h3>
+          <Link href="/about">About SokoBase</Link>
+          <Link href="/contact">Contact us</Link>
+          {site.supportWhatsapp && <a href={whatsappLink(site.supportWhatsapp, "Hi SokoBase")} target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a>}
         </nav>
       </div>
-      <div className={`container ${styles.copy}`}>&copy; {new Date().getFullYear()} SokoBase. All rights reserved.</div>
+      <div className={`container ${styles.copy}`}>
+        <span>&copy; {new Date().getFullYear()} {site.legalName}. All rights reserved.</span>
+        <span className={styles.legal}><Link href="/privacy">Privacy Policy</Link><Link href="/terms">Terms of Use</Link></span>
+      </div>
     </footer>
   );
 }

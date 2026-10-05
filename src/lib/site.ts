@@ -10,6 +10,9 @@ export const site = {
     "Shop products and services from verified businesses across Kenya. Compare prices, save favourites and order directly on WhatsApp.",
   locale: "en_KE",
   supportWhatsapp: process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ?? "",
+  // Shown on the Contact, Privacy and Terms pages. Set both before launch.
+  contactEmail: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "",
+  legalName: process.env.NEXT_PUBLIC_LEGAL_NAME || "SokoBase",
   // Hero slides fallback. The real slides are managed in Admin > Hero slides (lib/settings.ts).
   heroSlides: [] as HeroSlide[],
 };

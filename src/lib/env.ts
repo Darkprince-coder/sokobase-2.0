@@ -19,6 +19,8 @@ const requiredInProduction = z.object({
 const recommended: Record<string, string> = {
   NEXT_PUBLIC_SITE_URL: "canonical URLs fall back to https://sokobase.co.ke",
   NEXT_PUBLIC_SUPPORT_WHATSAPP: "every 'Talk to us on WhatsApp' and renew button is hidden",
+  NEXT_PUBLIC_CONTACT_EMAIL: "no email address is shown on the Contact, Privacy and Terms pages",
+  NEXT_PUBLIC_LEGAL_NAME: "legal pages name the operator as just 'SokoBase'",
   CLOUDINARY_API_KEY: "uploads use the unsigned preset instead of signed uploads",
   CLOUDINARY_API_SECRET: "uploads use the unsigned preset instead of signed uploads",
   ORDER_CLICK_SALT: "order-click fingerprints are salted with the service role key instead",
