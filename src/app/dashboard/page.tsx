@@ -1,9 +1,11 @@
-import { Package, FileEdit, MessageCircle, Eye, Store } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, Package, FileEdit, MessageCircle, Eye, Store } from "lucide-react";
 import { requireBusiness } from "@/lib/auth";
 import { getPlanUsage, getOrderClicks30 } from "@/lib/dashboard";
 import { formatDate } from "@/lib/dates";
 import { site } from "@/lib/site";
 import UsageBar from "@/components/dashboard/UsageBar";
+import ShareKit from "@/components/dashboard/ShareKit";
 import Button from "@/components/Button";
 import AuthCard from "@/components/AuthCard";
 import styles from "@/components/dashboard/dash.module.css";
@@ -19,17 +21,30 @@ export default async function DashboardOverview() {
     );
   }
 
-  const [usage, { count: published }, clicks30] = await Promise.all([
+  const [usage, { count: published }, clicks30, { data: profile }, { count: withPhotos }] = await Promise.all([
     getPlanUsage(supabase, business.id),
     supabase.from("products").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("status", "published"),
     getOrderClicks30(business.id),
+    supabase.from("businesses").select("description, logo_url, cover_url").eq("id", business.id).maybeSingle(),
+    supabase.from("products").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("status", "published").neq("images", "{}"),
   ]);
+  const shopUrl = `${site.url}/store/${business.slug}`;
+
+  // Getting-started checklist: shown until every step is done.
+  const steps = [
+    { done: !!profile?.logo_url, label: "Upload your logo", href: "/dashboard/profile" },
+    { done: (profile?.description ?? "").trim().length >= 40, label: "Describe your shop (what you sell, delivery, opening hours)", href: "/dashboard/profile" },
+    { done: !!profile?.cover_url, label: "Add a cover photo", href: "/dashboard/profile" },
+    { done: (published ?? 0) >= 1, label: "Publish your first product", href: "/dashboard/products/new" },
+    { done: (withPhotos ?? 0) >= 5, label: "Publish 5 products with photos", href: "/dashboard/products/new" },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
 
   return (
     <>
       <header className={styles.head}>
-        <div><h1>{business.name}</h1><p className={styles.sub}>sokobase.co.ke/store/{business.slug}</p></div>
-        <Button href={`${site.url}/store/${business.slug}`} external size="sm" variant="outline" icon={<Eye size={15} />}>View shop</Button>
+        <div><h1>{business.name}</h1><p className={styles.sub}>{shopUrl.replace(/^https?:\/\//, "")}</p></div>
+        <Button href={shopUrl} external size="sm" variant="outline" icon={<Eye size={15} />}>View shop</Button>
       </header>
 
       <div className={styles.stats}>
@@ -37,6 +52,31 @@ export default async function DashboardOverview() {
         <div className={styles.stat}><span className={styles.statIcon}><FileEdit size={18} /></span><div><div className={styles.statNum}>{usage.count - (published ?? 0)}</div><div className={styles.statLabel}>Drafts</div></div></div>
         <div className={styles.stat}><span className={styles.statIcon}><MessageCircle size={18} /></span><div><div className={styles.statNum}>{clicks30}</div><div className={styles.statLabel}>WhatsApp orders, 30d</div></div></div>
       </div>
+
+      {doneCount < steps.length && (
+        <section className={styles.panel}>
+          <h2>Get your shop ready</h2>
+          <p className={styles.sub}>{doneCount} of {steps.length} done. Shops with a logo, description and photos get far more orders.</p>
+          <div className={styles.progress} aria-hidden="true"><span style={{ width: `${(doneCount / steps.length) * 100}%` }} /></div>
+          <ul className={styles.checklist}>
+            {steps.map((s) => (
+              <li key={s.label}>
+                {s.done ? (
+                  <span className={`${styles.checkItem} ${styles.checkDone}`}><CheckCircle2 size={20} className={styles.checkIcon} aria-hidden="true" /><span>{s.label}</span><span className="visually-hidden"> (done)</span></span>
+                ) : (
+                  <Link href={s.href} className={styles.checkItem}><span className={styles.checkTodo} aria-hidden="true" /><span>{s.label}</span></Link>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className={styles.panel}>
+        <h2>Share your shop</h2>
+        <p className={styles.sub} style={{ marginBottom: 12 }}>One link for all your marketing: WhatsApp status, Instagram and TikTok bio, Facebook and flyers.</p>
+        <ShareKit url={shopUrl} shopName={business.name} />
+      </section>
 
       <section className={styles.panel}>
         <h2>Plan usage</h2>

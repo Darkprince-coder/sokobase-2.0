@@ -7,8 +7,8 @@ import styles from "@/components/dashboard/dash.module.css";
 
 export const metadata: Metadata = { title: "Edit product" };
 
-export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function EditProductPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ copied?: string }> }) {
+  const [{ id }, { copied }] = await Promise.all([params, searchParams]);
   if (!z.string().uuid().safeParse(id).success) notFound();
   const { supabase, business } = await requireBusiness();
   if (!business) return null;
@@ -25,12 +25,13 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   const full = {
     ...product,
     specs: (product.specs ?? {}) as Record<string, string>,
-    variants: (variants ?? []).map((v) => ({ id: v.id, label: v.label, price: v.price ? Number(v.price) : null, oldPrice: v.old_price ? Number(v.old_price) : null, inStock: v.in_stock })),
+    variants: (variants ?? []).map((v) => ({ id: v.id, label: v.label, price: v.price == null ? null : Number(v.price), oldPrice: v.old_price ? Number(v.old_price) : null, inStock: v.in_stock })),
   };
 
   return (
     <>
       <header className={styles.head}><h1>Edit product</h1></header>
+      {copied && <p className={styles.msgOk} role="status" style={{ marginBottom: 14 }}>Copy created as a draft. Change the name, photos or price, then set it to Published.</p>}
       <section className={styles.panel}>
         <ProductForm product={full} categories={categories ?? []} subcategories={subcategories ?? []} remaining={null} />
       </section>

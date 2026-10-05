@@ -208,6 +208,35 @@ export async function toggleProductStatus(fd: FormData) {
   refreshShop(business.slug, row ? [row.slug] : []);
 }
 
+// Copies a product (with its options) as a hidden draft, then opens it for editing. Handy for
+// near-identical items. The plan's product limit still applies (enforced in the database).
+export async function duplicateProduct(fd: FormData) {
+  const { db, business } = await bizDb();
+  const id = z.string().uuid().safeParse(fd.get("id"));
+  if (!id.success) return;
+  const [{ data: p }, { data: variants }] = await Promise.all([
+    db.from("products").select("name, description, category_id, subcategory_id, price, old_price, price_type, badge, images, in_stock, specs")
+      .eq("id", id.data).eq("business_id", business.id).maybeSingle(),
+    db.from("product_variants").select("label, price, old_price, in_stock, sort_order").eq("product_id", id.data).order("sort_order"),
+  ]);
+  if (!p) return;
+
+  const name = `${p.name} (copy)`.slice(0, 120);
+  const slugBase = slugify(name).slice(0, 110) || "product";
+  let newId = "";
+  for (let i = 0; i < 5 && !newId; i++) {
+    const { data, error } = await db.rpc("save_product", {
+      p_id: null, p_business_id: business.id, p_slug: i === 0 ? slugBase : `${slugBase}-${Math.random().toString(36).slice(2, 7)}`,
+      p_fields: { ...p, name, status: "draft" }, p_variants: variants ?? [],
+    });
+    if (data) newId = (data as { id: string }).id;
+    else if (error?.code !== "23505") redirect(`/dashboard/products?error=${encodeURIComponent(readableDbError(error?.message, error?.code))}`);
+  }
+  if (!newId) redirect(`/dashboard/products?error=${encodeURIComponent("Could not copy this product. Try again.")}`);
+  revalidatePath("/dashboard/products");
+  redirect(`/dashboard/products/${newId}/edit?copied=1`);
+}
+
 // ---------- Security ----------
 const passwordSchema = z
   .object({
