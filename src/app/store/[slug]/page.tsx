@@ -8,6 +8,14 @@ import { getStoreBySlug } from "@/lib/catalog";
 import { whatsappLink } from "@/lib/site";
 import styles from "./store.module.css";
 
+// Safety net: server actions revalidate these pages on every change; this catches anything missed.
+export const revalidate = 300;
+
+// Render each page on its first visit, then serve it from cache until revalidated (ISR).
+export async function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const result = await getStoreBySlug((await params).slug);
   if (!result) return { title: "Shop not found" };

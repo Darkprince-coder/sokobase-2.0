@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { adminDb } from "@/lib/admin";
-import { formatDate } from "@/lib/dates";
+import { categoryNames, one, type BusinessCategoriesRel, type Rel } from "@/lib/relations";
+import { formatDate, isPast } from "@/lib/dates";
 import StatusPill from "@/components/admin/StatusPill";
 import Button from "@/components/Button";
 import styles from "@/components/admin/admin.module.css";
@@ -10,8 +11,6 @@ export const metadata: Metadata = { title: "Businesses" };
 
 const FILTERS = ["all", "active", "expired", "suspended"] as const;
 type Filter = (typeof FILTERS)[number];
-const one = <T,>(v: T | T[] | null | undefined): T | undefined => (Array.isArray(v) ? v[0] : v ?? undefined);
-const many = <T,>(v: T | T[] | null | undefined): T[] => (Array.isArray(v) ? v : v ? [v] : []);
 
 export default async function BusinessesPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string }> }) {
   const sp = await searchParams;
@@ -29,12 +28,14 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
   const latest = new Map<string, NonNullable<typeof subs>[number]>();
   for (const s of subs ?? []) if (!latest.has(s.business_id)) latest.set(s.business_id, s);
 
-  const rows = (businesses ?? []).map((b: any) => {
+  type Row = { id: string; slug: string; name: string; location: string; status: string; created_at: string;
+    products: Rel<{ count: number }>; counties: Rel<{ name: string }>; business_categories: BusinessCategoriesRel };
+  const rows = ((businesses ?? []) as unknown as Row[]).map((b) => {
     const sub = latest.get(b.id);
-    const live = !!sub && sub.status === "active" && new Date(sub.ends_at).getTime() > Date.now();
+    const live = !!sub && sub.status === "active" && !isPast(sub.ends_at);
     const state = b.status === "suspended" ? "suspended" : live ? "active" : "expired";
     const plan = one(sub?.plans);
-    const cats = many(b.business_categories).map((bc: any) => one(bc.categories)?.name).filter(Boolean);
+    const cats = categoryNames(b.business_categories);
     return { b, sub, plan, state: state as "active" | "expired" | "suspended", count: one(b.products)?.count ?? 0, county: one(b.counties)?.name, cats };
   }).filter((r) => filter === "all" || r.state === filter);
 

@@ -17,3 +17,7 @@
 .biz { font-size: 12.5px; color: var(--ink-2); }
 .order { margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 600; text-decoration: none; color: var(--green); border: 1px solid var(--green); border-radius: var(--radius-sm); padding: 7px 8px; transition: background 0.18s, color 0.18s; }
 .order:hover { background: var(--green); color: #fff; }
+.ask { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.soldOut { position: absolute; inset: auto 8px 8px; text-align: center; background: rgba(28, 28, 28, 0.78); color: #fff; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: var(--radius-sm); }
+.orderMuted { color: var(--ink-2); border-color: var(--line); }
+.orderMuted:hover { background: var(--paper-2); color: var(--ink); }

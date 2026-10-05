@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { bizDb, done, fail, readableDbError, type ActionState } from "@/lib/dashboard";
+import { bizDb, done, fail, readableDbError, refreshShop, type ActionState } from "@/lib/dashboard";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeKePhone } from "@/lib/phone";
 import { slugify } from "@/lib/slug";
@@ -51,6 +51,7 @@ export async function updateProfile(_prev: ActionState, fd: FormData): Promise<A
   if (catError) return fail(readableDbError(catError.message, catError.code));
 
   revalidatePath("/dashboard");
+  refreshShop(business.slug);
   return done("Shop profile saved.");
 }
 
@@ -150,20 +151,26 @@ export async function saveProduct(_prev: ActionState, fd: FormData): Promise<Act
   };
 
   let productId = v.id || "";
+  let productSlug = "";
   if (productId) {
-    const { error } = await db.from("products").update(base).eq("id", productId).eq("business_id", business.id);
+    const { data: updated, error } = await db.from("products").update(base).eq("id", productId).eq("business_id", business.id).select("slug").maybeSingle();
     if (error) return fail(readableDbError(error.message, error.code));
+    if (!updated) return fail("Product not found.");
+    productSlug = updated.slug;
   } else {
-    const productSlugBase = slugify(v.name) || "product";
-    let slug = productSlugBase;
-    for (let i = 0; i < 5; i++) {
-      const { data: taken } = await db.from("products").select("id").eq("business_id", business.id).eq("slug", slug).maybeSingle();
-      if (!taken) break;
-      slug = `${productSlugBase}-${i + 2}`;
+    // Product slugs are unique across the whole marketplace (see 0006), so a clash with any
+    // shop's product gets a short random suffix. The unique index is the final arbiter.
+    const productSlugBase = slugify(v.name).slice(0, 110) || "product";
+    let created: { id: string; slug: string } | null = null;
+    for (let i = 0; i < 5 && !created; i++) {
+      const slug = i === 0 ? productSlugBase : `${productSlugBase}-${Math.random().toString(36).slice(2, 7)}`;
+      const { data, error } = await db.from("products").insert({ ...base, slug }).select("id, slug").single();
+      if (data) created = data;
+      else if (error?.code !== "23505") return fail(readableDbError(error?.message, error?.code));
     }
-    const { data: created, error } = await db.from("products").insert({ ...base, slug }).select("id").single();
-    if (error || !created) return fail(readableDbError(error?.message, error?.code));
+    if (!created) return fail("Could not create a link for this product. Try a slightly different name.");
     productId = created.id;
+    productSlug = created.slug;
   }
 
   await db.from("product_variants").delete().eq("product_id", productId);
@@ -173,6 +180,7 @@ export async function saveProduct(_prev: ActionState, fd: FormData): Promise<Act
   }
 
   revalidatePath("/dashboard/products");
+  refreshShop(business.slug, [productSlug]);
   if (v.id) return done("Product saved.");
   redirect("/dashboard/products");
 }
@@ -181,8 +189,9 @@ export async function deleteProduct(fd: FormData) {
   const { db, business } = await bizDb();
   const id = z.string().uuid().safeParse(fd.get("id"));
   if (!id.success) return;
-  await db.from("products").delete().eq("id", id.data).eq("business_id", business.id);
+  const { data: removed } = await db.from("products").delete().eq("id", id.data).eq("business_id", business.id).select("slug").maybeSingle();
   revalidatePath("/dashboard/products");
+  refreshShop(business.slug, removed ? [removed.slug] : []);
 }
 
 export async function toggleProductStock(fd: FormData) {
@@ -190,8 +199,9 @@ export async function toggleProductStock(fd: FormData) {
   const id = z.string().uuid().safeParse(fd.get("id"));
   const inStock = fd.get("in_stock") === "true";
   if (!id.success) return;
-  await db.from("products").update({ in_stock: !inStock }).eq("id", id.data).eq("business_id", business.id);
+  const { data: row } = await db.from("products").update({ in_stock: !inStock }).eq("id", id.data).eq("business_id", business.id).select("slug").maybeSingle();
   revalidatePath("/dashboard/products");
+  refreshShop(business.slug, row ? [row.slug] : []);
 }
 
 export async function toggleProductStatus(fd: FormData) {
@@ -199,8 +209,9 @@ export async function toggleProductStatus(fd: FormData) {
   const id = z.string().uuid().safeParse(fd.get("id"));
   const status = fd.get("status");
   if (!id.success) return;
-  await db.from("products").update({ status: status === "published" ? "draft" : "published" }).eq("id", id.data).eq("business_id", business.id);
+  const { data: row } = await db.from("products").update({ status: status === "published" ? "draft" : "published" }).eq("id", id.data).eq("business_id", business.id).select("slug").maybeSingle();
   revalidatePath("/dashboard/products");
+  refreshShop(business.slug, row ? [row.slug] : []);
 }
 
 // ---------- Security ----------

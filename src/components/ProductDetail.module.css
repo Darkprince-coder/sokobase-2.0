@@ -49,3 +49,4 @@
   .orderDesktop:hover { background: var(--color-primary-dark); }
   .orderMobile { display: none; }
 }
+.ask { font-weight: 600; font-size: 20px; color: var(--ink-2); }

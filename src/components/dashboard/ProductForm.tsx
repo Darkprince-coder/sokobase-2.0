@@ -73,7 +73,7 @@ export default function ProductForm({ product, categories, subcategories, remain
       <label className={styles.field}>
         <span>Specifications (optional)</span>
         <textarea name="specs" defaultValue={product ? specsToText(product.specs) : ""} rows={4} placeholder={"Warranty: 2 months\nMaterial: Stainless steel"} />
-        <span className={styles.hint}>One per line, as "Label: Value".</span>
+        <span className={styles.hint}>One per line, as &ldquo;Label: Value&rdquo;.</span>
       </label>
 
       <div className={styles.field}>

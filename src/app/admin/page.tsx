@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { adminDb } from "@/lib/admin";
-import { daysLeft, formatDate } from "@/lib/dates";
+import { one, type Rel } from "@/lib/relations";
+import { daysLeft, formatDate, nowMs } from "@/lib/dates";
 import styles from "@/components/admin/admin.module.css";
 
 export default async function AdminOverview() {
   const { db } = await adminDb();
-  const nowIso = new Date().toISOString();
-  const since30 = new Date(Date.now() - 30 * 86400000).toISOString();
+  const nowIso = new Date(nowMs()).toISOString();
+  const since30 = new Date(nowMs() - 30 * 86400000).toISOString();
 
   const [biz, prods, clicks, live, recent] = await Promise.all([
     db.from("businesses").select("id", { count: "exact", head: true }),
@@ -21,8 +22,8 @@ export default async function AdminOverview() {
   for (const s of live.data ?? []) {
     const cur = latest.get(s.business_id);
     if (!cur || s.ends_at > cur.ends_at) {
-      const plan = Array.isArray(s.plans) ? (s.plans[0] as any)?.name : (s.plans as any)?.name;
-      const name = Array.isArray(s.businesses) ? (s.businesses[0] as any)?.name : (s.businesses as any)?.name;
+      const plan = one(s.plans as Rel<{ name: string }>)?.name;
+      const name = one(s.businesses as Rel<{ name: string }>)?.name;
       latest.set(s.business_id, { ends_at: s.ends_at, plan: plan ?? "", name: name ?? "" });
     }
   }

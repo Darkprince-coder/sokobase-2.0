@@ -19,7 +19,7 @@ export default function Header() {
       <div className={styles.topbar}>
         <div className={`container ${styles.topInner}`}>
           <span>Order directly on WhatsApp from verified businesses</span>
-          <Link href="/join">Sell on SokoBase</Link>
+          <Link href="/sell">Sell on SokoBase</Link>
         </div>
       </div>
       <header className={styles.header}>
@@ -38,7 +38,7 @@ export default function Header() {
               </AnimatePresence>
               <span className={styles.savedLabel}>Saved</span>
             </Link>
-            <span className={styles.sell}><Button href="/join" variant="accent" size="sm">Sell on SokoBase</Button></span>
+            <span className={styles.sell}><Button href="/sell" variant="accent" size="sm">Sell on SokoBase</Button></span>
           </div>
         </div>
         {pathname !== "/products" && <div className={`container ${styles.mobileSearch}`}><SearchBar /></div>}

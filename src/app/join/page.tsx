@@ -6,6 +6,7 @@ import Button from "@/components/Button";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSessionUser } from "@/lib/auth";
 import { site, whatsappLink } from "@/lib/site";
+import { isPast } from "@/lib/dates";
 import styles from "@/components/AuthCard.module.css";
 
 export const metadata: Metadata = { title: "Set up your shop", robots: { index: false, follow: false } };
@@ -33,7 +34,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
   const { data: invite } = await db.from("invites").select("used_at, expires_at, plan_id, plans(name)").eq("code", code).maybeSingle();
   if (!invite) return <InvalidInvite text="We couldn't find this invite. Ask SokoBase for a new link." />;
   if (invite.used_at) return <InvalidInvite text="This invite has already been used. Ask SokoBase for a new one if you need another shop." />;
-  if (new Date(invite.expires_at).getTime() < Date.now()) return <InvalidInvite text="This invite link has expired. Ask SokoBase for a new one." />;
+  if (isPast(invite.expires_at)) return <InvalidInvite text="This invite link has expired. Ask SokoBase for a new one." />;
 
   const [{ data: categories }, { data: counties }] = await Promise.all([
     db.from("categories").select("id, name").eq("active", true).order("sort_order"),

@@ -16,3 +16,9 @@ export const site = {
 
 export const whatsappLink = (phone: string, text = "") =>
   `https://wa.me/${phone.replace(/\D/g, "")}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
+
+// Where "Sell on SokoBase" CTAs send a prospective business: a prefilled chat with the owner.
+export const sellWhatsappLink = (planName?: string) =>
+  site.supportWhatsapp
+    ? whatsappLink(site.supportWhatsapp, `Hi SokoBase, I'd like to list my business${planName ? ` on the ${planName} plan` : ""}.`)
+    : null;

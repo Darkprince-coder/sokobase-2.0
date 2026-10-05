@@ -9,8 +9,11 @@ import ShopsSection from "@/components/ShopsSection";
 import Button from "@/components/Button";
 import { getHeroSlides } from "@/lib/settings";
 import { getProducts, getShops } from "@/lib/catalog";
-import { site, whatsappLink } from "@/lib/site";
+import { sellWhatsappLink } from "@/lib/site";
 import styles from "./page.module.css";
+
+// Safety net: server actions revalidate these pages on every change; this catches anything missed.
+export const revalidate = 300;
 
 export default async function Home() {
   const [slides, deals, fresh, recommended, shops] = await Promise.all([
@@ -21,7 +24,7 @@ export default async function Home() {
     getShops({ limit: 4 }),
   ]);
   const offers = deals.length ? deals : await getProducts({ badge: "offer", limit: 12 });
-  const sellHref = site.supportWhatsapp ? whatsappLink(site.supportWhatsapp, "Hi SokoBase, I want to list my business.") : "/join";
+  const sellHref = sellWhatsappLink() ?? "/sell";
 
   return (
     <>

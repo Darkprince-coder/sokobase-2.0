@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { adminDb } from "@/lib/admin";
-import { formatDate } from "@/lib/dates";
+import { one } from "@/lib/relations";
+import { formatDate, isPast } from "@/lib/dates";
 import { site } from "@/lib/site";
 import { revokeInvite } from "@/app/admin/actions";
 import InviteForm from "@/components/admin/InviteForm";
@@ -11,7 +12,6 @@ import Button from "@/components/Button";
 import styles from "@/components/admin/admin.module.css";
 
 export const metadata: Metadata = { title: "Invites" };
-const one = <T,>(v: T | T[] | null | undefined): T | undefined => (Array.isArray(v) ? v[0] : v ?? undefined);
 
 export default async function InvitesPage() {
   const { db } = await adminDb();
@@ -40,7 +40,7 @@ export default async function InvitesPage() {
               <thead><tr><th>Code</th><th>Plan</th><th>Issued to</th><th>Expires</th><th>Status</th><th></th></tr></thead>
               <tbody>
                 {invites!.map((i) => {
-                  const kind = i.used_at ? "used" : new Date(i.expires_at).getTime() < Date.now() ? "lapsed" : "unused";
+                  const kind = i.used_at ? "used" : isPast(i.expires_at) ? "lapsed" : "unused";
                   const biz = one(i.businesses);
                   return (
                     <tr key={i.id}>
@@ -52,7 +52,7 @@ export default async function InvitesPage() {
                       <td>
                         {kind === "unused" && (
                           <div className={styles.rowActions}>
-                            <CopyButton value={`${site.url}/join?code=${i.code}`} label="Copy link" />
+                            <CopyButton value={`${site.portalUrl}/join?code=${i.code}`} label="Copy link" />
                             <form action={revokeInvite}><input type="hidden" name="id" value={i.id} /><Button type="submit" size="sm" variant="outline" className={styles.dangerBtn}>Revoke</Button></form>
                           </div>
                         )}

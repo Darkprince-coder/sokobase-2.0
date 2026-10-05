@@ -1,11 +1,14 @@
 export type ProductBadge = "hot" | "offer" | "new";
+export type PriceType = "fixed" | "from" | "contact";
 
 export type Product = {
   id: string;
   slug: string;
   name: string;
-  price: number;
+  price: number | null; // null when priceType is "contact"
   oldPrice?: number | null;
+  priceType: PriceType;
+  inStock: boolean;
   badge?: ProductBadge | null;
   business: string;
   businessId: string;

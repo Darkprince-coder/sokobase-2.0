@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { MessageCircle } from "lucide-react";
 import { adminDb } from "@/lib/admin";
-import { formatDate } from "@/lib/dates";
+import { categoryNames, one, type BusinessCategoriesRel, type Rel } from "@/lib/relations";
+import { formatDate, isPast } from "@/lib/dates";
 import { whatsappLink } from "@/lib/site";
 import { renewSubscription, resetOwnerPassword, setBusinessStatus } from "@/app/admin/actions";
 import ActionForm from "@/components/admin/ActionForm";
@@ -13,8 +14,6 @@ import Button from "@/components/Button";
 import styles from "@/components/admin/admin.module.css";
 
 export const metadata: Metadata = { title: "Business" };
-const one = <T,>(v: T | T[] | null | undefined): T | undefined => (Array.isArray(v) ? v[0] : v ?? undefined);
-const many = <T,>(v: T | T[] | null | undefined): T[] => (Array.isArray(v) ? v : v ? [v] : []);
 
 export default async function BusinessDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -30,12 +29,13 @@ export default async function BusinessDetail({ params }: { params: Promise<{ id:
     db.auth.admin.getUserById(b.owner_id),
   ]);
 
-  const current = (subs ?? []).find((s) => s.status === "active" && new Date(s.ends_at).getTime() > Date.now());
+  const current = (subs ?? []).find((s) => s.status === "active" && !isPast(s.ends_at));
   const currentPlan = one(current?.plans);
   const state = b.status === "suspended" ? "suspended" : current ? "active" : "expired";
   const defaultPlan = currentPlan?.id ?? plans?.[0]?.id;
   const nextStatus = b.status === "active" ? "suspended" : "active";
-  const categoryNames = many((b as any).business_categories).map((bc: any) => one(bc.categories)?.name).filter(Boolean);
+  const rel = b as unknown as { counties: Rel<{ name: string }>; business_categories: BusinessCategoriesRel };
+  const cats = categoryNames(rel.business_categories);
 
   return (
     <>
@@ -50,9 +50,9 @@ export default async function BusinessDetail({ params }: { params: Promise<{ id:
           <div className={styles.dl}>
             <div><span>Shop link</span><span className={styles.mono}>/store/{b.slug}</span></div>
             <div><span>Owner email</span><span>{owner.user?.email ?? "-"}</span></div>
-            <div><span>County</span><span>{one((b as any).counties)?.name ?? "-"}</span></div>
+            <div><span>County</span><span>{one(rel.counties)?.name ?? "-"}</span></div>
             <div><span>Location</span><span>{b.location}</span></div>
-            <div><span>Categories</span><span>{categoryNames.length ? categoryNames.join(", ") : "-"}</span></div>
+            <div><span>Categories</span><span>{cats.length ? cats.join(", ") : "-"}</span></div>
             <div><span>WhatsApp</span><span className={styles.mono}>{b.whatsapp}</span></div>
             <div><span>Products</span><span className={styles.mono}>{one(b.products)?.count ?? 0}{currentPlan?.product_limit ? ` / ${currentPlan.product_limit}` : ""}</span></div>
             <div><span>Joined</span><span>{formatDate(b.created_at)}</span></div>

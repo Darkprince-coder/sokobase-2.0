@@ -23,7 +23,7 @@ export default async function SubcategoriesPage({ params }: { params: Promise<{ 
       <header className={styles.head}>
         <p className={styles.sub}><Link href="/admin/categories">Categories</Link> / {category.name}</p>
         <h1 style={{ marginTop: 6 }}>{category.name}: subcategories</h1>
-        <p className={styles.sub}>E.g. under Electronics: TVs, Laptops, Phones. Businesses choose from this list when adding a product; they can't type their own, to keep filtering clean.</p>
+        <p className={styles.sub}>E.g. under Electronics: TVs, Laptops, Phones. Businesses choose from this list when adding a product; they can&apos;t type their own, to keep filtering clean.</p>
       </header>
 
       <section className={styles.panel}>

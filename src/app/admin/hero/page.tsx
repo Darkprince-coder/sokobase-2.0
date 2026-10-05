@@ -8,8 +8,8 @@ export const metadata: Metadata = { title: "Hero slides" };
 export default async function HeroPage() {
   const { db } = await adminDb();
   const { data } = await db.from("platform_settings").select("value").eq("key", "hero_slides").maybeSingle();
-  const initial: Slide[] = (Array.isArray(data?.value) ? data.value : []).map((s: Partial<Slide>) => ({
-    id: s.id ?? Math.random().toString(36).slice(2, 10), title: s.title ?? "", subtitle: s.subtitle ?? "",
+  const initial: Slide[] = (Array.isArray(data?.value) ? data.value : []).map((s: Partial<Slide>, i: number) => ({
+    id: s.id ?? `slide-${i + 1}`, title: s.title ?? "", subtitle: s.subtitle ?? "",
     ctaLabel: s.ctaLabel ?? "", href: s.href ?? "", imageUrl: s.imageUrl ?? "",
   }));
   return (

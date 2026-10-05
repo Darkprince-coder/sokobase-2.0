@@ -5,7 +5,7 @@ import styles from "./PromoTiles.module.css";
 export default function PromoTiles() {
   return (
     <div className={styles.tiles}>
-      <Link href="/join" className={`${styles.tile} ${styles.sell}`}>
+      <Link href="/sell" className={`${styles.tile} ${styles.sell}`}>
         <Store size={26} aria-hidden="true" />
         <strong>Sell on SokoBase</strong>
         <span>Get your shop online and share one link with every customer.</span>

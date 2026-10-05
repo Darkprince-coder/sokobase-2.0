@@ -2,10 +2,13 @@ import type { MetadataRoute } from "next";
 import { site } from "@/lib/site";
 import { getProducts, getShops } from "@/lib/catalog";
 
+// Regenerated hourly so new shops and products reach search engines without a redeploy.
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const [products, shops] = await Promise.all([getProducts({ limit: 500 }), getShops({ limit: 500 })]);
-  const staticEntries: MetadataRoute.Sitemap = ["", "/products", "/stores"].map((path) => ({
+  const staticEntries: MetadataRoute.Sitemap = ["", "/products", "/stores", "/sell"].map((path) => ({
     url: `${site.url}${path}`, lastModified: now, changeFrequency: path === "" ? "daily" : "hourly", priority: path === "" ? 1 : 0.7,
   }));
   const productEntries: MetadataRoute.Sitemap = products.map((p) => ({ url: `${site.url}/products/${p.slug}`, lastModified: now, changeFrequency: "daily", priority: 0.6 }));

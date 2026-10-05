@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Heart, MapPin, MessageCircle, Store as StoreIcon } from "lucide-react";
 import ProductGallery from "./ProductGallery";
-import { formatKes, discountPercent } from "@/lib/format";
+import { formatKes, formatPrice, discountPercent } from "@/lib/format";
 import { site, whatsappLink } from "@/lib/site";
 import { useWishlist } from "@/lib/wishlist";
 import { logOrderClick } from "@/lib/track";
@@ -17,15 +17,20 @@ export default function ProductDetail({ product }: { product: PD }) {
   const [variantId, setVariantId] = useState<string | null>(product.variants[0]?.id ?? null);
   const variant = product.variants.find((v) => v.id === variantId) ?? null;
 
-  const price = variant?.price ?? product.price;
-  const oldPrice = variant?.oldPrice ?? product.oldPrice;
-  const inStock = variant ? variant.inStock : true;
-  const off = discountPercent(price, oldPrice);
+  // A variant with its own price shows that exact price; otherwise fall back to the product's.
+  const hasVariantPrice = variant?.price != null;
+  const price = hasVariantPrice ? variant!.price : product.price;
+  const priceType = hasVariantPrice ? "fixed" : product.priceType;
+  const oldPrice = hasVariantPrice ? variant!.oldPrice : product.oldPrice;
+  const inStock = product.inStock && (variant ? variant.inStock : true);
+  const off = priceType === "contact" ? 0 : discountPercent(price, oldPrice);
+  const priceText = formatPrice(price, priceType);
 
   const message = useMemo(() => {
     const variantLine = variant ? ` (${variant.label})` : "";
-    return `Hi ${product.business}, I'm interested in "${product.name}"${variantLine} - ${site.url}/products/${product.slug}. Is it available?`;
-  }, [product, variant]);
+    const ask = priceType === "contact" ? "What's the price, and is it available?" : inStock ? "Is it available?" : "Will it be back in stock?";
+    return `Hi ${product.business}, I'm interested in "${product.name}"${variantLine} - ${site.url}/products/${product.slug}. ${ask}`;
+  }, [product, variant, priceType, inStock]);
 
   const specs = Object.entries(product.specs).filter(([, v]) => v);
   const crumb = [product.category, product.subcategory].filter(Boolean).join(" / ");
@@ -46,8 +51,8 @@ export default function ProductDetail({ product }: { product: PD }) {
         <h1 className={styles.name}>{product.name}</h1>
 
         <div className={styles.priceRow}>
-          <span className={styles.price}>{formatKes(price)}</span>
-          {off > 0 && oldPrice && (
+          <span className={priceType === "contact" ? styles.ask : styles.price}>{priceText}</span>
+          {off > 0 && oldPrice != null && (
             <>
               <span className={styles.old}>{formatKes(oldPrice)}</span>
               <span className={styles.off}>-{off}%</span>
@@ -77,7 +82,7 @@ export default function ProductDetail({ product }: { product: PD }) {
             <Heart size={19} fill={saved ? "currentColor" : "none"} />
           </motion.button>
           <a href={whatsappLink(product.whatsapp, message)} target="_blank" rel="noopener noreferrer" className={styles.orderDesktop} onClick={() => logOrderClick(product.businessId, product.id)}>
-            <MessageCircle size={18} aria-hidden="true" /> Order on WhatsApp
+            <MessageCircle size={18} aria-hidden="true" /> {inStock ? "Order on WhatsApp" : "Ask about restock"}
           </a>
         </div>
 
@@ -110,7 +115,7 @@ export default function ProductDetail({ product }: { product: PD }) {
       </div>
 
       <a href={whatsappLink(product.whatsapp, message)} target="_blank" rel="noopener noreferrer" className={styles.orderMobile} onClick={() => logOrderClick(product.businessId, product.id)}>
-        <MessageCircle size={18} aria-hidden="true" /> Order on WhatsApp {off > 0 ? formatKes(price) : ""}
+        <MessageCircle size={18} aria-hidden="true" /> {inStock ? "Order on WhatsApp" : "Ask about restock"}{inStock && priceType !== "contact" ? ` · ${priceText}` : ""}
       </a>
     </div>
   );

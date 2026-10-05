@@ -14,7 +14,7 @@ export default function VariantsEditor({ initial }: { initial: VariantRow[] }) {
   return (
     <div className={styles.field}>
       <span>Sizes / colours / options (optional)</span>
-      <p className={styles.hint} style={{ marginTop: -2 }}>Leave empty for a single product with one price. Add a row per option, e.g. "42", "Red", "1kg", each with its own price.</p>
+      <p className={styles.hint} style={{ marginTop: -2 }}>Leave empty for a single product with one price. Add a row per option, e.g. &ldquo;42&rdquo;, &ldquo;Red&rdquo;, &ldquo;1kg&rdquo;, each with its own price.</p>
       <input type="hidden" name="variants" value={JSON.stringify(rows.filter((r) => r.label.trim()))} />
       {rows.map((r) => (
         <div key={r.id} className={styles.grid2} style={{ marginTop: 8, alignItems: "end" }}>

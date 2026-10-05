@@ -17,6 +17,16 @@ export async function bizDb() {
 
 export const refreshDashboard = () => revalidatePath("/dashboard", "layout");
 
+// Public pages are cached, so every change a business makes must also refresh where it shows up:
+// the home feed, product listings, the shop page and (when known) the product page itself.
+export function refreshShop(shopSlug: string, productSlugs: string[] = []) {
+  revalidatePath("/");
+  revalidatePath("/products");
+  revalidatePath("/stores");
+  revalidatePath(`/store/${shopSlug}`);
+  for (const s of productSlugs) revalidatePath(`/products/${s}`);
+}
+
 export function readableDbError(message: string | undefined, code: string | undefined): string {
   if (message?.includes("Product limit reached")) return message;
   if (code === "42501" || code === "P0001") return "Your subscription is not active, so changes cannot be saved. Contact SokoBase to renew.";
