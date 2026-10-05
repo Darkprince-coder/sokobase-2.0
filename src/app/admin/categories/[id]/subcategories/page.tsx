@@ -5,7 +5,7 @@ import { z } from "zod";
 import { adminDb } from "@/lib/admin";
 import { saveSubcategory, deleteSubcategory } from "@/app/admin/actions";
 import ActionForm from "@/components/admin/ActionForm";
-import Button from "@/components/Button";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
 import styles from "@/components/admin/admin.module.css";
 
 export const metadata: Metadata = { title: "Subcategories" };
@@ -54,7 +54,7 @@ export default async function SubcategoriesPage({ params }: { params: Promise<{ 
                     <td>
                       <form action={deleteSubcategory}>
                         <input type="hidden" name="id" value={s.id} /><input type="hidden" name="category_id" value={category.id} />
-                        <Button type="submit" size="sm" variant="outline" className={styles.dangerBtn}>Delete</Button>
+                        <ConfirmSubmit label="Delete" question="Delete? (Hidden instead if products use it)" confirmLabel="Delete" />
                       </form>
                     </td>
                   </tr>

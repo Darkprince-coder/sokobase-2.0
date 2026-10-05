@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BadgeCheck } from "lucide-react";
 import { adminDb } from "@/lib/admin";
 import { categoryNames, one, type BusinessCategoriesRel, type Rel } from "@/lib/relations";
 import { formatDate, isPast } from "@/lib/dates";
@@ -18,7 +19,7 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
   const term = (sp.q ?? "").replace(/[%,()*\\]/g, "").trim().slice(0, 60);
   const { db } = await adminDb();
 
-  let query = db.from("businesses").select("id, slug, name, location, status, created_at, products(count), counties(name), business_categories(categories(name))").order("created_at", { ascending: false }).limit(500);
+  let query = db.from("businesses").select("id, slug, name, location, status, verified_at, created_at, products(count), counties(name), business_categories(categories(name))").order("created_at", { ascending: false }).limit(500);
   if (term) query = query.ilike("name", `%${term}%`);
   const [{ data: businesses }, { data: subs }] = await Promise.all([
     query,
@@ -28,7 +29,7 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
   const latest = new Map<string, NonNullable<typeof subs>[number]>();
   for (const s of subs ?? []) if (!latest.has(s.business_id)) latest.set(s.business_id, s);
 
-  type Row = { id: string; slug: string; name: string; location: string; status: string; created_at: string;
+  type Row = { id: string; slug: string; name: string; location: string; status: string; verified_at: string | null; created_at: string;
     products: Rel<{ count: number }>; counties: Rel<{ name: string }>; business_categories: BusinessCategoriesRel };
   const rows = ((businesses ?? []) as unknown as Row[]).map((b) => {
     const sub = latest.get(b.id);
@@ -60,7 +61,7 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
               <tbody>
                 {rows.map(({ b, sub, plan, state, count, county, cats }) => (
                   <tr key={b.id}>
-                    <td><Link href={`/admin/businesses/${b.id}`}>{b.name}</Link><div className={styles.muted} style={{ fontSize: 12 }}>{cats.length ? cats.join(", ") : "No category"}</div></td>
+                    <td><Link href={`/admin/businesses/${b.id}`}>{b.name}</Link>{b.verified_at && <BadgeCheck size={14} color="var(--color-primary)" aria-label="Verified" style={{ display: "inline", marginLeft: 4, verticalAlign: "-2px" }} />}<div className={styles.muted} style={{ fontSize: 12 }}>{cats.length ? cats.join(", ") : "No category"}</div></td>
                     <td>{county ?? <span className={styles.muted}>-</span>}</td>
                     <td>{plan?.name ?? <span className={styles.muted}>None</span>}</td>
                     <td className={styles.mono}>{count}{plan?.product_limit ? ` / ${plan.product_limit}` : ""}</td>

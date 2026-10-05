@@ -105,6 +105,9 @@ export async function registerBusiness(_prev: ActionState, fd: FormData): Promis
   }
 
   await db.from("invites").update({ business_id: business.id }).eq("id", invite.id);
+  // Amount paid for the first period = the plan price (fails harmlessly before migration 0009).
+  const { data: plan } = await db.from("plans").select("price_kes").eq("id", invite.plan_id).maybeSingle();
+  if (plan) await db.from("subscriptions").update({ amount_kes: plan.price_kes }).eq("business_id", business.id);
 
   const authed = await createClient();
   const { error: signInError } = await authed.auth.signInWithPassword({ email: v.email, password: v.password });

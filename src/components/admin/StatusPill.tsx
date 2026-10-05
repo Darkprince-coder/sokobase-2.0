@@ -7,6 +7,13 @@ const MAP = {
   unused: ["Unused", "status-available"],
   used: ["Used", "status-sold"],
   lapsed: ["Expired", "status-reserved"],
+  cancelled: ["Cancelled", "status-sold"],
+  queued: ["Starts later", "status-available"],
+  open: ["Open", "status-reserved"],
+  resolved: ["Resolved", "status-available"],
+  dismissed: ["Dismissed", "status-sold"],
+  draft: ["Hidden", "status-sold"],
+  published: ["Live", "status-available"],
 } as const;
 
 export default function StatusPill({ kind }: { kind: keyof typeof MAP }) {

@@ -8,7 +8,7 @@ import { revokeInvite } from "@/app/admin/actions";
 import InviteForm from "@/components/admin/InviteForm";
 import CopyButton from "@/components/admin/CopyButton";
 import StatusPill from "@/components/admin/StatusPill";
-import Button from "@/components/Button";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
 import styles from "@/components/admin/admin.module.css";
 
 export const metadata: Metadata = { title: "Invites" };
@@ -53,7 +53,7 @@ export default async function InvitesPage() {
                         {kind === "unused" && (
                           <div className={styles.rowActions}>
                             <CopyButton value={`${site.portalUrl}/join?code=${i.code}`} label="Copy link" />
-                            <form action={revokeInvite}><input type="hidden" name="id" value={i.id} /><Button type="submit" size="sm" variant="outline" className={styles.dangerBtn}>Revoke</Button></form>
+                            <form action={revokeInvite}><input type="hidden" name="id" value={i.id} /><ConfirmSubmit label="Revoke" question="Revoke this invite?" confirmLabel="Revoke" /></form>
                           </div>
                         )}
                       </td>

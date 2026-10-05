@@ -29,7 +29,7 @@
 .stat { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 16px; }
 .statNum { font-family: var(--font-mono); font-weight: 600; font-size: 28px; color: var(--green-700); }
 .statLabel { font-size: 13px; color: var(--ink-3); }
-@media (min-width: 900px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 900px) { .stats { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); } }
 
 .panel { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 18px; }
 .panel h2 { font-size: 17px; margin-bottom: 12px; }
@@ -90,3 +90,12 @@
 .dl div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
 .dl div:last-child { border-bottom: 0; }
 .dl span:first-child { color: var(--ink-3); }
+
+.list { display: flex; flex-direction: column; }
+.listItem { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.listItem:last-child { border-bottom: 0; }
+.inlineEdit summary { cursor: pointer; color: var(--color-primary); font-weight: 600; font-size: 13.5px; }
+.inlineEdit[open] { min-width: 240px; }
+.inlineEdit[open] summary { margin-bottom: 8px; }
+.remind { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--color-primary); text-decoration: none; border: 1px solid var(--line); border-radius: var(--radius-pill); padding: 6px 12px; white-space: nowrap; }
+.remind:hover { border-color: var(--color-primary); }

@@ -1,16 +1,18 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Store, Ticket, CreditCard, Tags, Images } from "lucide-react";
+import { LayoutDashboard, Store, Ticket, CreditCard, Tags, Images, Flag, History } from "lucide-react";
 import styles from "./admin.module.css";
 
 const ITEMS = [
   { href: "/admin", label: "Overview", Icon: LayoutDashboard },
   { href: "/admin/businesses", label: "Businesses", Icon: Store },
   { href: "/admin/invites", label: "Invites", Icon: Ticket },
+  { href: "/admin/reports", label: "Reports", Icon: Flag },
   { href: "/admin/plans", label: "Plans", Icon: CreditCard },
   { href: "/admin/categories", label: "Categories", Icon: Tags },
   { href: "/admin/hero", label: "Hero slides", Icon: Images },
+  { href: "/admin/activity", label: "Activity", Icon: History },
 ];
 
 export default function AdminNav() {
