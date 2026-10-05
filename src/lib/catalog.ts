@@ -178,6 +178,12 @@ export async function getSimilarProducts(categoryId: string | null, excludeId: s
   return rows<ProductRow>(data).map(toProduct);
 }
 
+export async function getShopProducts(businessId: string, excludeId: string, limit = 8): Promise<Product[]> {
+  const { data } = await createPublicClient().from("products").select(PRODUCT_SELECT).eq("status", "published")
+    .eq("business_id", businessId).neq("id", excludeId).order("created_at", { ascending: false }).limit(limit);
+  return rows<ProductRow>(data).map(toProduct);
+}
+
 export async function getCounties(): Promise<County[]> {
   const db = createPublicClient();
   const { data } = await db.from("counties").select("id, slug, name").order("sort_order");

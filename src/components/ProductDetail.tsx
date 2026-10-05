@@ -4,6 +4,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Heart, MapPin, MessageCircle, Store as StoreIcon } from "lucide-react";
 import ProductGallery from "./ProductGallery";
+import ShareButton from "./ShareButton";
+import ReportListing from "./ReportListing";
 import { formatKes, formatPrice, discountPercent } from "@/lib/format";
 import { site, whatsappLink } from "@/lib/site";
 import { useWishlist } from "@/lib/wishlist";
@@ -112,6 +114,12 @@ export default function ProductDetail({ product }: { product: PD }) {
             <p className={styles.desc}>{product.description}</p>
           </section>
         )}
+
+        <div className={styles.footRow}>
+          <ShareButton url={`${site.url}/products/${product.slug}`} title={product.name} text={`${product.name} on SokoBase`} />
+          <ReportListing businessId={product.businessId} productId={product.id} />
+        </div>
+        <p className={styles.safety}>Tip: confirm the item, price and delivery with the seller on WhatsApp before paying. Prefer paying on delivery or at the shop.</p>
       </div>
 
       <a href={whatsappLink(product.whatsapp, message)} target="_blank" rel="noopener noreferrer" className={styles.orderMobile} onClick={() => logOrderClick(product.businessId, product.id)}>

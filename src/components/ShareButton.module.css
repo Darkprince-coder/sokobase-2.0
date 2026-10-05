@@ -1,0 +1,4 @@
+.btn, .solid { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; padding: 0 16px; border-radius: var(--radius-pill); font-size: 14px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--line); background: var(--white); color: var(--ink); transition: border-color 0.15s, background 0.15s; }
+.btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.solid { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.solid:hover { background: var(--color-primary-dark); }

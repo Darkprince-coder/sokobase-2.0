@@ -1,8 +1,8 @@
-import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public";
+import { visitorFingerprint } from "@/lib/fingerprint";
 
 // Logs taps on "Order on WhatsApp". Public by design (it fires from public pages), so it defends
 // itself: same-site requests only, ids must refer to a public shop/product, repeat taps by the same
@@ -30,14 +30,6 @@ function sameSite(req: Request) {
   }
 }
 
-function fingerprint(req: Request) {
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || req.headers.get("x-real-ip") || "unknown";
-  const ua = req.headers.get("user-agent") ?? "";
-  const day = new Date().toISOString().slice(0, 10);
-  const salt = process.env.ORDER_CLICK_SALT || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  return createHash("sha256").update(`${salt}|${day}|${ip}|${ua}`).digest("hex").slice(0, 32);
-}
-
 export async function POST(req: Request) {
   if (!sameSite(req)) return ok(); // silently ignored: nothing to learn by probing
   const parsed = schema.safeParse(await req.json().catch(() => null));
@@ -57,7 +49,7 @@ export async function POST(req: Request) {
   }
 
   const db = createAdminClient();
-  const fp = fingerprint(req);
+  const fp = visitorFingerprint(req.headers);
   const now = Date.now();
 
   let recent = db.from("order_clicks").select("id", { count: "exact", head: true })

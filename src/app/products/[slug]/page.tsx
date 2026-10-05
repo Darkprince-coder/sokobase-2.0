@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ProductDetail from "@/components/ProductDetail";
 import ProductSection from "@/components/ProductSection";
-import { getProductBySlug, getSimilarProducts } from "@/lib/catalog";
+import { getProductBySlug, getShopProducts, getSimilarProducts } from "@/lib/catalog";
 import { site } from "@/lib/site";
 import { jsonLdString } from "@/lib/jsonld";
 import { formatPrice } from "@/lib/format";
@@ -30,7 +30,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const product = await getProductBySlug((await params).slug);
   if (!product) notFound();
-  const similar = await getSimilarProducts(product.categoryId, product.id, 8);
+  const [fromShop, similarAll] = await Promise.all([
+    getShopProducts(product.businessId, product.id, 8),
+    getSimilarProducts(product.categoryId, product.id, 12),
+  ]);
+  const shopIds = new Set(fromShop.map((p) => p.id));
+  const similar = similarAll.filter((p) => !shopIds.has(p.id)).slice(0, 8);
 
   // Google requires a price on an Offer, so "ask for price" products are described without one.
   const variantPrices = product.variants.map((v) => v.price).filter((p): p is number => p != null);
@@ -51,7 +56,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="container" style={{ paddingTop: 18 }}>
       <ProductDetail product={product} />
-      {similar.length > 0 && <ProductSection title="Similar products" href="/products" products={similar} layout="rail" />}
+      {fromShop.length > 0 && <ProductSection title={`More from ${product.business}`} href={`/store/${product.businessSlug}`} products={fromShop} layout="rail" />}
+      {similar.length > 0 && <ProductSection title="Similar products" href={product.categorySlug ? `/products?category=${product.categorySlug}` : "/products"} products={similar} layout="rail" />}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(ld) }} />
     </div>
   );

@@ -1,0 +1,8 @@
+.wrap, .compact { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 18px; }
+.compact { padding: 0; border: 0; background: transparent; }
+.qr { flex: none; width: 180px; height: 180px; display: grid; place-items: center; background: #fff; border-radius: var(--radius-md); border: 1px solid var(--line); color: var(--ink-3); }
+.qr img { width: 100%; height: 100%; border-radius: var(--radius-md); }
+.text { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.text p { color: var(--ink-3); font-size: 14px; }
+.btn { display: inline-flex; align-items: center; gap: 7px; min-height: 42px; padding: 0 16px; border-radius: var(--radius-pill); border: 0; background: var(--color-primary); color: #fff; font-weight: 600; cursor: pointer; }
+.btn:disabled { opacity: 0.6; cursor: default; }
