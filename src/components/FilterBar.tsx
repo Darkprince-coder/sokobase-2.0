@@ -1,14 +1,20 @@
 "use client";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCategories } from "@/lib/categories-context";
 import styles from "./FilterBar.module.css";
 
 type Subcategory = { slug: string; name: string };
 
-export default function FilterBar({ category, subcategory, badge, subcategories = [] }: { category?: string; subcategory?: string; badge?: string; subcategories?: Subcategory[] }) {
+type Props = { category?: string; subcategory?: string; badge?: string; q?: string; subcategories?: Subcategory[] };
+
+// Badge / category / subcategory chips. Keeps the search term and the sort/county/stock controls.
+export default function FilterBar({ category, subcategory, badge, q, subcategories = [] }: Props) {
+  const params = useSearchParams();
   const categories = useCategories();
-  const qs = (params: Record<string, string | undefined>) => {
-    const sp = new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]);
+  const qs = (chips: Record<string, string | undefined>) => {
+    const keep = { q, county: params.get("county") ?? undefined, sort: params.get("sort") ?? undefined, stock: params.get("stock") ?? undefined };
+    const sp = new URLSearchParams(Object.entries({ ...keep, ...chips }).filter(([, v]) => v) as [string, string][]);
     const s = sp.toString();
     return `/products${s ? `?${s}` : ""}`;
   };

@@ -16,14 +16,13 @@ export type ProductDetail = Product & {
 };
 export type Shop = {
   id: string; slug: string; name: string; location: string; county: string | null; countySlug: string | null;
-  categories: string[]; logoUrl: string | null; products: number;
+  categories: string[]; logoUrl: string | null; products: number; verified: boolean;
 };
 export type StoreDetail = {
   id: string; slug: string; name: string; description: string | null; location: string; county: string | null;
-  whatsapp: string; logoUrl: string | null; coverUrl: string | null; categories: string[];
+  whatsapp: string; logoUrl: string | null; coverUrl: string | null; categories: string[]; verified: boolean;
 };
 export type County = { id: string; slug: string; name: string };
-
 
 // Row shapes for the joined selects below. Without generated Supabase types, PostgREST embeds
 // come back untyped (and may be an object or a one-element array), so they are described here.
@@ -39,14 +38,22 @@ type ProductDetailRow = ProductRow & {
   description: string | null; specs: Record<string, string> | null; category_id: string | null; subcategories: Rel<NameRow>;
 };
 type ShopRow = {
-  id: string; slug: string; name: string; location: string; logo_url: string | null;
+  id: string; slug: string; name: string; location: string; logo_url: string | null; verified_at?: string | null;
   counties: Rel<{ slug: string; name: string }>; business_categories: BusinessCategoriesRel; products: Rel<{ count: number }>;
 };
 type StoreRow = {
   id: string; slug: string; name: string; description: string | null; location: string; whatsapp: string;
-  logo_url: string | null; cover_url: string | null; counties: Rel<NameRow>; business_categories: BusinessCategoriesRel;
+  logo_url: string | null; cover_url: string | null; verified_at?: string | null; counties: Rel<NameRow>; business_categories: BusinessCategoriesRel;
 };
 const rows = <T>(data: unknown): T[] => (data ?? []) as T[];
+
+// verified_at arrives with migration 0008; until it is applied, shop queries retry without it.
+const SHOP_SELECT = "id, slug, name, location, logo_url, verified_at, counties(slug, name), business_categories(categories(name)), products(count)";
+const withoutVerified = (select: string) => select.replace(", verified_at", "");
+async function shopQuery<T>(run: (select: string) => PromiseLike<{ data: T | null; error: { code?: string } | null }>, select: string) {
+  const first = await run(select);
+  return first.error?.code === "42703" ? run(withoutVerified(select)) : first;
+}
 
 const PRODUCT_SELECT = "id, slug, name, price, old_price, price_type, in_stock, badge, images, businesses(id, name, slug, location, whatsapp), categories(name)";
 
@@ -78,6 +85,53 @@ export async function getProducts(opts: { q?: string; category?: string; subcate
   }
   const { data } = await query;
   return rows<ProductRow>(data).map(toProduct);
+}
+
+export type ProductSort = "relevance" | "newest" | "price_asc" | "price_desc";
+export type ProductQuery = {
+  q?: string; category?: string; subcategory?: string; county?: string; badge?: string;
+  inStock?: boolean; sort?: ProductSort; limit?: number; offset?: number;
+};
+
+const idForSlug = async (table: "categories" | "counties", slug?: string) => {
+  if (!slug) return null;
+  const { data } = await createPublicClient().from(table).select("id").eq("slug", slug).maybeSingle();
+  return (data?.id as string | undefined) ?? undefined; // undefined = unknown slug, so no results
+};
+
+// Ranked, typo-tolerant search with filters (search_products() in 0008). Falls back to the plain
+// listing if the migration hasn't been applied yet.
+export async function searchProducts(opts: ProductQuery): Promise<{ products: Product[]; total: number }> {
+  const db = createPublicClient();
+  const [categoryId, countyId] = await Promise.all([idForSlug("categories", opts.category), idForSlug("counties", opts.county)]);
+  if (categoryId === undefined || countyId === undefined) return { products: [], total: 0 };
+  let subcategoryId: string | null = null;
+  if (opts.subcategory && categoryId) {
+    const { data: sub } = await db.from("subcategories").select("id").eq("category_id", categoryId).eq("slug", opts.subcategory).maybeSingle();
+    if (!sub) return { products: [], total: 0 };
+    subcategoryId = sub.id;
+  }
+  const badge = opts.badge && ["hot", "offer", "new"].includes(opts.badge) ? opts.badge : null;
+  const sort = opts.sort === "newest" ? "newest" : opts.sort ?? (opts.q ? "relevance" : "newest");
+
+  const { data, error } = await db.rpc("search_products", {
+    p_q: opts.q?.trim() || null, p_category_id: categoryId, p_subcategory_id: subcategoryId, p_county_id: countyId,
+    p_badge: badge, p_in_stock: !!opts.inStock, p_sort: sort, p_limit: opts.limit ?? 24, p_offset: opts.offset ?? 0,
+  });
+  if (error) {
+    const products = await getProducts({ q: opts.q, category: opts.category, subcategory: opts.subcategory, badge: opts.badge, limit: opts.limit });
+    return { products, total: products.length };
+  }
+  const hits = (data ?? []) as { id: string; total: number }[];
+  if (!hits.length) return { products: [], total: 0 };
+  return { products: await getProductsByIds(hits.map((h) => h.id)), total: Number(hits[0].total) };
+}
+
+// Shops whose name matches a search, shown above product results.
+export async function searchShops(q: string, limit = 6): Promise<Shop[]> {
+  const term = q.replace(/[%,()*\\]/g, " ").trim().slice(0, 60);
+  if (term.length < 2) return [];
+  return (await findShops({ q: term, limit })).shops;
 }
 
 // Saved items live in the visitor's browser as ids; this resolves them, keeping the saved order
@@ -135,29 +189,41 @@ function toShop(b: ShopRow): Shop {
   return {
     id: b.id, slug: b.slug, name: b.name, location: b.location, county: county?.name ?? null, countySlug: county?.slug ?? null,
     categories: categoryNames(b.business_categories),
-    logoUrl: b.logo_url, products: one(b.products)?.count ?? 0,
+    logoUrl: b.logo_url, products: one(b.products)?.count ?? 0, verified: !!b.verified_at,
   };
 }
 
 export async function getShops(opts: { limit?: number; county?: string } = {}): Promise<Shop[]> {
+  return (await findShops({ county: opts.county, limit: opts.limit ?? 40 })).shops;
+}
+
+// Shop directory: filter by county, category and name, newest first, with a total for "Load more".
+export async function findShops(opts: { q?: string; county?: string; category?: string; limit?: number; offset?: number }): Promise<{ shops: Shop[]; total: number }> {
   const db = createPublicClient();
-  let query = db.from("businesses")
-    .select("id, slug, name, location, logo_url, counties(slug, name), business_categories(categories(name)), products(count)")
-    .eq("status", "active").order("created_at", { ascending: false }).limit(opts.limit ?? 40);
-  if (opts.county) {
-    const { data: county } = await db.from("counties").select("id").eq("slug", opts.county).maybeSingle();
-    if (!county) return [];
-    query = query.eq("county_id", county.id);
-  }
-  const { data } = await query;
-  return rows<ShopRow>(data).map(toShop);
+  const [countyId, categoryId] = await Promise.all([idForSlug("counties", opts.county), idForSlug("categories", opts.category)]);
+  if (countyId === undefined || categoryId === undefined) return { shops: [], total: 0 };
+  const term = (opts.q ?? "").replace(/[%,()*\\]/g, " ").trim().slice(0, 60);
+  const limit = opts.limit ?? 24;
+  const offset = opts.offset ?? 0;
+  // An inner join on business_categories filters shops to the chosen category.
+  const base = categoryId ? SHOP_SELECT + ", filter:business_categories!inner(category_id)" : SHOP_SELECT;
+  const { data, count } = await shopQuery((select) => {
+    let query = db.from("businesses").select(select, { count: "exact" }).eq("status", "active")
+      .order("created_at", { ascending: false }).range(offset, offset + limit - 1);
+    if (countyId) query = query.eq("county_id", countyId);
+    if (categoryId) query = query.eq("filter.category_id", categoryId);
+    if (term) query = query.ilike("name", `%${term}%`);
+    return query.then((r) => ({ ...r, data: r.data as unknown, count: r.count }));
+  }, base) as { data: unknown; count?: number | null };
+  return { shops: rows<ShopRow>(data).map(toShop), total: count ?? 0 };
 }
 
 export const getStoreBySlug = cache(async (slug: string): Promise<{ store: StoreDetail; products: Product[] } | null> => {
   const db = createPublicClient();
-  const { data } = await db.from("businesses")
-    .select("id, slug, name, description, location, whatsapp, logo_url, cover_url, counties(name), business_categories(categories(name))")
-    .eq("slug", slug).eq("status", "active").maybeSingle();
+  const { data } = await shopQuery(
+    (select) => db.from("businesses").select(select).eq("slug", slug).eq("status", "active").maybeSingle(),
+    "id, slug, name, description, location, whatsapp, logo_url, cover_url, verified_at, counties(name), business_categories(categories(name))",
+  );
   const b = data as StoreRow | null;
   if (!b) return null;
   const { data: products } = await db.from("products").select(PRODUCT_SELECT).eq("business_id", b.id).eq("status", "published").order("created_at", { ascending: false });
@@ -165,7 +231,7 @@ export const getStoreBySlug = cache(async (slug: string): Promise<{ store: Store
     store: {
       id: b.id, slug: b.slug, name: b.name, description: b.description, location: b.location,
       county: one(b.counties)?.name ?? null, whatsapp: b.whatsapp, logoUrl: b.logo_url, coverUrl: b.cover_url,
-      categories: categoryNames(b.business_categories),
+      categories: categoryNames(b.business_categories), verified: !!b.verified_at,
     },
     products: rows<ProductRow>(products).map(toProduct),
   };

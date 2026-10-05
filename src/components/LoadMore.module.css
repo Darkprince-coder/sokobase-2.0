@@ -1,0 +1,5 @@
+.wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 24px; }
+.count, .end { font-size: 13.5px; color: var(--ink-3); text-align: center; }
+.end { margin-top: 20px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 28px; border-radius: var(--radius-pill); border: 1.5px solid var(--color-primary); color: var(--color-primary); font-weight: 600; text-decoration: none; background: var(--white); }
+.btn:hover { background: var(--color-primary); color: #fff; }

@@ -21,7 +21,7 @@ export default function ShopsSection({ shops }: { shops: Shop[] }) {
                   {s.logoUrl ? <Image src={s.logoUrl} alt="" width={46} height={46} className={styles.avatarImg} /> : <StoreIcon size={20} />}
                 </span>
                 <span className={styles.info}>
-                  <strong>{s.name}<BadgeCheck size={16} className={styles.verified} aria-label="Active shop" /></strong>
+                  <strong>{s.name}{s.verified && <BadgeCheck size={16} className={styles.verified} aria-label="Verified business" />}</strong>
                   <span className={styles.meta}><MapPin size={12} aria-hidden="true" />{s.location} &middot; {s.products} products</span>
                 </span>
               </Link>
