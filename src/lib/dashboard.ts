@@ -28,10 +28,16 @@ export function refreshShop(shopSlug: string, productSlugs: string[] = []) {
 }
 
 export function readableDbError(message: string | undefined, code: string | undefined): string {
-  if (message?.includes("Product limit reached")) return message;
-  if (code === "42501" || code === "P0001") return "Your subscription is not active, so changes cannot be saved. Contact SokoBase to renew.";
+  // P0001 is raised by our own triggers/functions with a message written for the user.
+  if (code === "P0001" && message) return message;
+  if (code === "P0002") return "That product no longer exists.";
+  if (code === "42501") return "Your subscription is not active, so changes cannot be saved. Contact SokoBase to renew.";
+  if (code === "23503") return "One of the selected options no longer exists. Refresh the page and try again.";
   return "Something went wrong. Please try again.";
 }
+
+// Keep in sync with business_is_public() in 0007_security_hardening.sql.
+export const GRACE_DAYS = 7;
 
 export async function getPlanUsage(db: Awaited<ReturnType<typeof bizDb>>["db"], businessId: string) {
   const [{ count }, { data: sub }] = await Promise.all([
@@ -41,7 +47,8 @@ export async function getPlanUsage(db: Awaited<ReturnType<typeof bizDb>>["db"], 
   ]);
   const plan = Array.isArray(sub?.plans) ? sub?.plans[0] : sub?.plans;
   const live = !!sub && sub.status === "active" && new Date(sub.ends_at).getTime() > Date.now();
-  return { count: count ?? 0, limit: plan?.product_limit ?? null, planName: plan?.name ?? null, live, endsAt: sub?.ends_at ?? null };
+  const graceEndsAt = sub ? new Date(new Date(sub.ends_at).getTime() + GRACE_DAYS * 86400000).toISOString() : null;
+  return { count: count ?? 0, limit: plan?.product_limit ?? null, planName: plan?.name ?? null, live, endsAt: sub?.ends_at ?? null, graceEndsAt };
 }
 
 // order_clicks is service-role only (see 0002_rls_and_grants.sql). This is the single narrow

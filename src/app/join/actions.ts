@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/slug";
 import { normalizeKePhone } from "@/lib/phone";
+import { isOwnImageUrl } from "@/lib/cloudinary";
 import type { ActionState } from "@/lib/action-state";
 
 const schema = z
@@ -21,7 +22,7 @@ const schema = z
     logo_url: z.string().trim().max(500).optional().default(""),
   })
   .refine((v) => v.password === v.confirm_password, { message: "Passwords do not match.", path: ["confirm_password"] })
-  .refine((v) => v.logo_url === "" || v.logo_url.startsWith("https://res.cloudinary.com/"), { message: "Upload the logo properly.", path: ["logo_url"] });
+  .refine((v) => v.logo_url === "" || isOwnImageUrl(v.logo_url), { message: "Upload the logo properly.", path: ["logo_url"] });
 
 export async function registerBusiness(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const parsed = schema.safeParse(Object.fromEntries(fd.entries()));

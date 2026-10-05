@@ -1,9 +1,10 @@
 "use server";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { adminDb, done, fail, refreshPublic, slugify, type ActionState } from "@/lib/admin";
+import { adminDb, audit, done, fail, refreshPublic, slugify, type ActionState } from "@/lib/admin";
 import { generateInviteCode } from "@/lib/invites";
 import { site } from "@/lib/site";
+import { isOwnImageUrl } from "@/lib/cloudinary";
 
 const uuid = z.string().uuid();
 const firstError = (e: z.ZodError) => e.issues[0]?.message ?? "Check the form and try again.";
@@ -31,6 +32,7 @@ export async function createInvite(_prev: ActionState, fd: FormData): Promise<Ac
       code, plan_id: v.plan_id, duration_days: v.duration_days, note: v.note || null, expires_at: expires, created_by: user.id,
     });
     if (!error) {
+      await audit(db, user.id, "invite.create", { type: "invite" }, { code, plan_id: v.plan_id, duration_days: v.duration_days, note: v.note || null });
       revalidatePath("/admin/invites");
       return done("Invite created.", { code, link: `${site.portalUrl}/join?code=${code}`, expires });
     }
@@ -40,20 +42,22 @@ export async function createInvite(_prev: ActionState, fd: FormData): Promise<Ac
 }
 
 export async function revokeInvite(fd: FormData) {
-  const { db } = await adminDb();
+  const { db, user } = await adminDb();
   const id = uuid.safeParse(fd.get("id"));
   if (!id.success) return;
-  await db.from("invites").delete().eq("id", id.data).is("used_at", null);
+  const { data: removed } = await db.from("invites").delete().eq("id", id.data).is("used_at", null).select("code").maybeSingle();
+  if (removed) await audit(db, user.id, "invite.revoke", { type: "invite", id: id.data }, { code: removed.code });
   revalidatePath("/admin/invites");
 }
 
 // ---------- Businesses and subscriptions ----------
 export async function setBusinessStatus(fd: FormData) {
-  const { db } = await adminDb();
+  const { db, user } = await adminDb();
   const id = uuid.safeParse(fd.get("id"));
   const status = z.enum(["active", "suspended"]).safeParse(fd.get("status"));
   if (!id.success || !status.success) return;
-  await db.from("businesses").update({ status: status.data }).eq("id", id.data);
+  const { error } = await db.from("businesses").update({ status: status.data }).eq("id", id.data);
+  if (!error) await audit(db, user.id, status.data === "suspended" ? "business.suspend" : "business.activate", { type: "business", id: id.data });
   revalidatePath("/admin/businesses");
   revalidatePath(`/admin/businesses/${id.data}`);
   refreshPublic();
@@ -83,6 +87,9 @@ export async function renewSubscription(_prev: ActionState, fd: FormData): Promi
     ends_at: ends.toISOString(), payment_note: v.payment_note || null, created_by: user.id,
   });
   if (error) return fail("Could not save the subscription.");
+  await audit(db, user.id, "subscription.renew", { type: "business", id: v.business_id },
+    { plan_id: v.plan_id, duration_days: v.duration_days, starts_at: new Date(base).toISOString(), ends_at: ends.toISOString(), payment_note: v.payment_note || null });
+  refreshPublic(); // a lapsed shop becomes public again
   revalidatePath(`/admin/businesses/${v.business_id}`);
   revalidatePath("/admin/businesses");
   revalidatePath("/admin");
@@ -92,13 +99,14 @@ export async function renewSubscription(_prev: ActionState, fd: FormData): Promi
 const passwordSchema = z.object({ business_id: uuid, password: z.string().min(10, "Use at least 10 characters").max(72) });
 
 export async function resetOwnerPassword(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  const { db } = await adminDb();
+  const { db, user } = await adminDb();
   const parsed = passwordSchema.safeParse(fields(fd));
   if (!parsed.success) return fail(firstError(parsed.error));
   const { data: b } = await db.from("businesses").select("owner_id").eq("id", parsed.data.business_id).maybeSingle();
   if (!b) return fail("Business not found.");
   const { error } = await db.auth.admin.updateUserById(b.owner_id, { password: parsed.data.password });
   if (error) return fail("Could not update the password.");
+  await audit(db, user.id, "owner.password_reset", { type: "business", id: parsed.data.business_id });
   return done("Password updated. Share it with the owner privately.");
 }
 
@@ -110,7 +118,7 @@ const planSchema = z.object({
 });
 
 export async function updatePlan(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  const { db } = await adminDb();
+  const { db, user } = await adminDb();
   const parsed = planSchema.safeParse(fields(fd));
   if (!parsed.success) return fail(firstError(parsed.error));
   const limitRaw = String(fd.get("product_limit") ?? "").trim();
@@ -120,6 +128,7 @@ export async function updatePlan(_prev: ActionState, fd: FormData): Promise<Acti
   const { id, ...rest } = parsed.data;
   const { error } = await db.from("plans").update({ ...rest, product_limit: limit, active: fd.get("active") === "on" }).eq("id", id);
   if (error) return fail("Could not save the plan.");
+  await audit(db, user.id, "plan.update", { type: "plan", id }, { ...rest, product_limit: limit, active: fd.get("active") === "on" });
   revalidatePath("/admin/plans");
   refreshPublic();
   return done("Plan saved.");
@@ -135,7 +144,7 @@ const categorySchema = z.object({
 });
 
 export async function saveCategory(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  const { db } = await adminDb();
+  const { db, user } = await adminDb();
   const parsed = categorySchema.safeParse(fields(fd));
   if (!parsed.success) return fail(firstError(parsed.error));
   const v = parsed.data;
@@ -150,6 +159,7 @@ export async function saveCategory(_prev: ActionState, fd: FormData): Promise<Ac
     const { error } = await db.from("categories").insert({ ...base, slug });
     if (error) return fail(error.code === "23505" ? "A category with that name already exists." : "Could not add the category.");
   }
+  await audit(db, user.id, v.id ? "category.update" : "category.create", { type: "category", id: v.id || null }, base);
   revalidatePath("/admin/categories");
   refreshPublic();
   return done(v.id ? "Category saved." : "Category added.");
@@ -164,7 +174,7 @@ const subcategorySchema = z.object({
 });
 
 export async function saveSubcategory(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  const { db } = await adminDb();
+  const { db, user } = await adminDb();
   const parsed = subcategorySchema.safeParse(fields(fd));
   if (!parsed.success) return fail(firstError(parsed.error));
   const v = parsed.data;
@@ -179,17 +189,19 @@ export async function saveSubcategory(_prev: ActionState, fd: FormData): Promise
     const { error } = await db.from("subcategories").insert({ ...base, category_id: v.category_id, slug });
     if (error) return fail(error.code === "23505" ? "A subcategory with that name already exists here." : "Could not add the subcategory.");
   }
+  await audit(db, user.id, v.id ? "subcategory.update" : "subcategory.create", { type: "subcategory", id: v.id || null }, { ...base, category_id: v.category_id });
   revalidatePath(`/admin/categories/${v.category_id}/subcategories`);
   refreshPublic();
   return done(v.id ? "Subcategory saved." : "Subcategory added.");
 }
 
 export async function deleteSubcategory(fd: FormData) {
-  const { db } = await adminDb();
+  const { db, user } = await adminDb();
   const id = uuid.safeParse(fd.get("id"));
   const categoryId = uuid.safeParse(fd.get("category_id"));
   if (!id.success || !categoryId.success) return;
-  await db.from("subcategories").delete().eq("id", id.data).eq("category_id", categoryId.data);
+  const { error } = await db.from("subcategories").delete().eq("id", id.data).eq("category_id", categoryId.data);
+  if (!error) await audit(db, user.id, "subcategory.delete", { type: "subcategory", id: id.data }, { category_id: categoryId.data });
   revalidatePath(`/admin/categories/${categoryId.data}/subcategories`);
   refreshPublic();
 }
@@ -203,11 +215,11 @@ const slideSchema = z.object({
   href: z.string().trim().max(200).default("")
     .refine((v) => v === "" || (v.startsWith("/") && !v.startsWith("//")) || v.startsWith("https://"), "Links must start with / or https://"),
   imageUrl: z.string().trim().max(500).default("")
-    .refine((v) => v === "" || v.startsWith("https://res.cloudinary.com/"), "Upload the image so it is stored on Cloudinary"),
+    .refine((v) => v === "" || isOwnImageUrl(v), "Upload the image so it is stored on Cloudinary"),
 });
 
 export async function saveHeroSlides(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  const { db } = await adminDb();
+  const { db, user } = await adminDb();
   let parsedJson: unknown;
   try { parsedJson = JSON.parse(String(fd.get("slides") ?? "[]")); } catch { return fail("Could not read the slides."); }
   const parsed = z.array(slideSchema).max(8, "Use at most 8 slides").safeParse(parsedJson);
@@ -216,6 +228,7 @@ export async function saveHeroSlides(_prev: ActionState, fd: FormData): Promise<
 
   const { error } = await db.from("platform_settings").upsert({ key: "hero_slides", value: slides }, { onConflict: "key" });
   if (error) return fail("Could not save the slides.");
+  await audit(db, user.id, "hero.update", { type: "settings" }, { slides: slides.length });
   refreshPublic();
   return done(slides.length ? `${slides.length} slide${slides.length > 1 ? "s" : ""} saved.` : "Slides cleared. The default banner will show.");
 }

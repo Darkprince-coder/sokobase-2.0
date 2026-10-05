@@ -30,7 +30,7 @@ export default function RegisterForm({ code, categories, counties }: { code: str
 
       <div className={styles.field}>
         <span>Business logo</span>
-        <LogoUpload value={logoUrl} onChange={setLogoUrl} />
+        <LogoUpload value={logoUrl} onChange={setLogoUrl} inviteCode={code} />
       </div>
 
       <label className={styles.field}>

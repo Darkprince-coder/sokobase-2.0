@@ -1,8 +1,10 @@
 "use client";
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Button from "./Button";
+import Turnstile from "./Turnstile";
 import { login, type LoginState } from "@/app/login/actions";
 import styles from "./LoginForm.module.css";
 
@@ -25,6 +27,8 @@ export default function LoginForm() {
           </button>
         </div>
       </label>
+      <div className={styles.links}><span /><Link href="/forgot-password">Forgot password?</Link></div>
+      <Turnstile resetKey={state.attempt} />
       <AnimatePresence>
         {state.error && (
           <motion.p role="alert" className={styles.error} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>

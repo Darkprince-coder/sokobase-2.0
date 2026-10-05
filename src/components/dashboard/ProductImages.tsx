@@ -1,12 +1,10 @@
 "use client";
 import { useRef, useState } from "react";
+import { uploadImage, UploadError } from "@/lib/upload";
 import { Loader2, Plus, X } from "lucide-react";
 import styles from "./dash.module.css";
 
-const CLOUD = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 const MAX = 4;
-const MAX_MB = 5;
 
 export default function ProductImages({ value, onChange }: { value: string[]; onChange: (urls: string[]) => void }) {
   const input = useRef<HTMLInputElement>(null);
@@ -16,20 +14,11 @@ export default function ProductImages({ value, onChange }: { value: string[]; on
   async function onFile(file: File | undefined) {
     if (!file) return;
     setError("");
-    if (!CLOUD || !PRESET) return setError("Image upload is not configured yet.");
-    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return setError("Use a JPG, PNG or WebP image.");
-    if (file.size > MAX_MB * 1024 * 1024) return setError(`Image must be under ${MAX_MB} MB.`);
     setBusy(true);
     try {
-      const body = new FormData();
-      body.append("file", file);
-      body.append("upload_preset", PRESET);
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`, { method: "POST", body });
-      const json = await res.json();
-      if (!res.ok || !json.secure_url) throw new Error();
-      onChange([...value, json.secure_url as string]);
-    } catch {
-      setError("Upload failed. Try again.");
+      onChange([...value, await uploadImage(file)]);
+    } catch (e) {
+      setError(e instanceof UploadError ? e.message : "Upload failed. Try again.");
     } finally {
       setBusy(false);
       if (input.current) input.current.value = "";

@@ -4,7 +4,8 @@ import Image from "next/image";
 import { MapPin, MessageCircle, PackageSearch, Store as StoreIcon } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import Button from "@/components/Button";
-import { getStoreBySlug } from "@/lib/catalog";
+import { getShopStatus, getStoreBySlug } from "@/lib/catalog";
+import ComingSoon from "@/components/ComingSoon";
 import { whatsappLink } from "@/lib/site";
 import styles from "./store.module.css";
 
@@ -18,13 +19,19 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const result = await getStoreBySlug((await params).slug);
-  if (!result) return { title: "Shop not found" };
+  if (!result) return { title: "Shop not available", robots: { index: false } };
   return { title: result.store.name, description: result.store.description ?? `${result.store.name}, ${result.store.location}. Shop on SokoBase.`, alternates: { canonical: `/store/${result.store.slug}` } };
 }
 
 export default async function StorePage({ params }: { params: Promise<{ slug: string }> }) {
-  const result = await getStoreBySlug((await params).slug);
-  if (!result) notFound();
+  const slug = (await params).slug;
+  const result = await getStoreBySlug(slug);
+  if (!result) {
+    if ((await getShopStatus(slug)) === "unavailable") {
+      return <ComingSoon title="This shop is taking a break" text="It isn't accepting orders on SokoBase right now. Browse other shops in the meantime." />;
+    }
+    notFound();
+  }
   const { store, products } = result;
 
   return (

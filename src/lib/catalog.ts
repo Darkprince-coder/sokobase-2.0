@@ -171,6 +171,12 @@ export const getStoreBySlug = cache(async (slug: string): Promise<{ store: Store
   };
 });
 
+// Distinguishes a paused shop (suspended, or plan lapsed past the grace period) from a missing one.
+export async function getShopStatus(slug: string): Promise<"public" | "unavailable" | "missing"> {
+  const { data } = await createPublicClient().rpc("shop_status", { p_slug: slug });
+  return data === "public" || data === "unavailable" ? data : "missing";
+}
+
 export type PublicPlan = { id: string; slug: string; name: string; productLimit: number | null; priceKes: number; durationDays: number };
 
 export async function getPlans(): Promise<PublicPlan[]> {

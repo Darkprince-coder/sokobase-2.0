@@ -6,6 +6,7 @@ import { bizDb, done, fail, readableDbError, refreshShop, type ActionState } fro
 import { createClient } from "@/lib/supabase/server";
 import { normalizeKePhone } from "@/lib/phone";
 import { slugify } from "@/lib/slug";
+import { isOwnImageUrl } from "@/lib/cloudinary";
 
 const fields = (fd: FormData) => Object.fromEntries(fd.entries());
 const firstError = (e: z.ZodError) => e.issues[0]?.message ?? "Check the form and try again.";
@@ -29,6 +30,7 @@ export async function updateProfile(_prev: ActionState, fd: FormData): Promise<A
   const v = parsed.data;
   const whatsapp = normalizeKePhone(v.whatsapp);
   if (!whatsapp) return fail("Enter a valid Kenyan WhatsApp number, e.g. 07XXXXXXXX.");
+  if ((v.logo_url && !isOwnImageUrl(v.logo_url)) || (v.cover_url && !isOwnImageUrl(v.cover_url))) return fail("Upload images using the upload buttons.");
 
   let categoryIds: string[] = [];
   try {
@@ -45,9 +47,8 @@ export async function updateProfile(_prev: ActionState, fd: FormData): Promise<A
   }).eq("id", business.id);
   if (error) return fail(readableDbError(error.message, error.code));
 
-  // Simplest correct sync for a short list: replace the set each save.
-  await db.from("business_categories").delete().eq("business_id", business.id);
-  const { error: catError } = await db.from("business_categories").insert(categoryIds.map((category_id) => ({ business_id: business.id, category_id })));
+  // Replaces the whole set in one transaction, so a failure can't leave the shop with no categories.
+  const { error: catError } = await db.rpc("set_business_categories", { p_business_id: business.id, p_category_ids: categoryIds });
   if (catError) return fail(readableDbError(catError.message, catError.code));
 
   revalidatePath("/dashboard");
@@ -108,7 +109,7 @@ export async function saveProduct(_prev: ActionState, fd: FormData): Promise<Act
   }
 
   let images: string[] = [];
-  try { images = JSON.parse(v.images).filter((u: unknown) => typeof u === "string" && u.startsWith("https://res.cloudinary.com/")).slice(0, 8); } catch {}
+  try { images = JSON.parse(v.images).filter((u: unknown) => typeof u === "string" && isOwnImageUrl(u)).slice(0, 8); } catch {}
 
   let variantRows: z.infer<typeof variantRowSchema>[] = [];
   try {
@@ -144,39 +145,32 @@ export async function saveProduct(_prev: ActionState, fd: FormData): Promise<Act
 
   const inStock = fd.get("in_stock") === "on";
   const status = fd.get("status") === "draft" ? "draft" : "published";
-  const base = {
-    business_id: business.id, category_id: v.category_id || null, subcategory_id: v.subcategory_id || null,
+  const productFields = {
+    category_id: v.category_id || null, subcategory_id: v.subcategory_id || null,
     name: v.name, description: v.description || null, price, old_price: oldPrice, price_type: v.price_type,
     badge: v.badge || null, images, in_stock: inStock, status, specs: parseSpecs(v.specs),
   };
 
-  let productId = v.id || "";
+  // save_product writes the product and replaces its variants in one transaction (see 0007).
+  const save = (slug: string | null) => db.rpc("save_product", {
+    p_id: v.id || null, p_business_id: business.id, p_slug: slug, p_fields: productFields, p_variants: variants,
+  });
+
   let productSlug = "";
-  if (productId) {
-    const { data: updated, error } = await db.from("products").update(base).eq("id", productId).eq("business_id", business.id).select("slug").maybeSingle();
+  if (v.id) {
+    const { data, error } = await save(null);
     if (error) return fail(readableDbError(error.message, error.code));
-    if (!updated) return fail("Product not found.");
-    productSlug = updated.slug;
+    productSlug = (data as { slug: string }).slug;
   } else {
     // Product slugs are unique across the whole marketplace (see 0006), so a clash with any
     // shop's product gets a short random suffix. The unique index is the final arbiter.
     const productSlugBase = slugify(v.name).slice(0, 110) || "product";
-    let created: { id: string; slug: string } | null = null;
-    for (let i = 0; i < 5 && !created; i++) {
-      const slug = i === 0 ? productSlugBase : `${productSlugBase}-${Math.random().toString(36).slice(2, 7)}`;
-      const { data, error } = await db.from("products").insert({ ...base, slug }).select("id, slug").single();
-      if (data) created = data;
+    for (let i = 0; i < 5 && !productSlug; i++) {
+      const { data, error } = await save(i === 0 ? productSlugBase : `${productSlugBase}-${Math.random().toString(36).slice(2, 7)}`);
+      if (data) productSlug = (data as { slug: string }).slug;
       else if (error?.code !== "23505") return fail(readableDbError(error?.message, error?.code));
     }
-    if (!created) return fail("Could not create a link for this product. Try a slightly different name.");
-    productId = created.id;
-    productSlug = created.slug;
-  }
-
-  await db.from("product_variants").delete().eq("product_id", productId);
-  if (variants.length) {
-    const { error: vError } = await db.from("product_variants").insert(variants.map((r) => ({ ...r, product_id: productId })));
-    if (vError) return fail(readableDbError(vError.message, vError.code));
+    if (!productSlug) return fail("Could not create a link for this product. Try a slightly different name.");
   }
 
   revalidatePath("/dashboard/products");

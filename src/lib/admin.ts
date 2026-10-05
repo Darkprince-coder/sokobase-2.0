@@ -16,6 +16,13 @@ export async function adminDb() {
 }
 
 export const fail = (error: string): ActionState => ({ error });
+
+type Db = ReturnType<typeof createAdminClient>;
+// Records who changed what (admin_audit_log, service role only). Never blocks the action itself.
+export async function audit(db: Db, actorId: string, action: string, target?: { type: string; id?: string | null }, details: Record<string, unknown> = {}) {
+  const { error } = await db.from("admin_audit_log").insert({ actor_id: actorId, action, target_type: target?.type ?? null, target_id: target?.id ?? null, details });
+  if (error) console.error("[audit] failed to record", action, error.message);
+}
 export const done = (message: string, data?: Record<string, string>): ActionState => ({ ok: true, message, data });
 
 

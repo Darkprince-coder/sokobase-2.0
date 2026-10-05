@@ -7,7 +7,7 @@ import { updateSession } from "@/lib/supabase/proxy";
 // gating is skipped so everything is reachable on localhost.
 const PORTAL_HOST = process.env.NEXT_PUBLIC_PORTAL_HOST ?? "";
 const SITE_HOST = process.env.NEXT_PUBLIC_SITE_HOST ?? "";
-const PORTAL_PATHS = ["/login", "/admin", "/dashboard", "/join", "/forgot-password", "/reset-password"];
+const PORTAL_PATHS = ["/login", "/admin", "/dashboard", "/join", "/forgot-password", "/reset-password", "/auth"];
 const isPortalPath = (path: string) => PORTAL_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
 // Shared by both hosts: route handlers and root-level files such as /icon.svg or /robots.txt.
 const isShared = (path: string) => path.startsWith("/api/") || /\.[a-z0-9]+$/i.test(path);

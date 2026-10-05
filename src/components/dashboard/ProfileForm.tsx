@@ -31,7 +31,7 @@ export default function ProfileForm({ business, categories, counties }: { busine
       </div>
       <div className={styles.field}>
         <span>Cover photo (optional)</span>
-        <LogoUpload value={coverUrl} onChange={setCoverUrl} />
+        <LogoUpload value={coverUrl} onChange={setCoverUrl} label="cover photo" />
       </div>
 
       <label className={styles.field}><span>Business name</span><input type="text" name="name" defaultValue={business.name} maxLength={80} required /></label>
