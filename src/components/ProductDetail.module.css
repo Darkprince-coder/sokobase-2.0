@@ -52,3 +52,6 @@
 .ask { font-weight: 600; font-size: 20px; color: var(--ink-2); }
 .footRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
 .safety { margin-top: 10px; font-size: 13px; color: var(--ink-3); background: var(--paper-2); border-radius: var(--radius-md); padding: 10px 12px; }
+.heart:active { transform: scale(0.88); }
+.heartOn svg { animation: heartPop 0.3s var(--ease); }
+@keyframes heartPop { 50% { transform: scale(1.3); } }

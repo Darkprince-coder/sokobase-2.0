@@ -28,3 +28,5 @@
   .catnav { display: block; }
   .count { left: 22px; }
 }
+.count { animation: badgePop 0.3s var(--ease); }
+@keyframes badgePop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }

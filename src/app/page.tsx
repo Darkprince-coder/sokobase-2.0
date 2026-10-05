@@ -20,10 +20,13 @@ export default async function Home() {
     getHeroSlides(),
     getProducts({ badge: "hot", limit: 12 }),
     getProducts({ badge: "new", limit: 8 }),
-    getProducts({ limit: 12 }),
+    getProducts({ limit: 24 }),
     getShops({ limit: 4 }),
   ]);
   const offers = deals.length ? deals : await getProducts({ badge: "offer", limit: 12 });
+  // "Browse products" skips anything already shown above, so the page (and its data) has no repeats.
+  const shown = new Set([...offers, ...fresh].map((p) => p.id));
+  const browse = recommended.filter((p) => !shown.has(p.id)).slice(0, 12);
   const sellHref = sellWhatsappLink() ?? "/sell";
 
   return (
@@ -38,7 +41,7 @@ export default async function Home() {
       {offers.length > 0 && <ProductSection title="Hot deals" href="/products?badge=hot" products={offers} layout="rail" icon={<Flame size={20} />} tone="hot" />}
       {fresh.length > 0 && <ProductSection title="New arrivals" href="/products?badge=new" products={fresh} layout="grid" icon={<Sparkles size={20} />} />}
       <ShopsSection shops={shops} />
-      {recommended.length > 0 && <ProductSection title="Browse products" href="/products" products={recommended} layout="grid" />}
+      {browse.length > 0 && <ProductSection title="Browse products" href="/products" products={browse} layout="grid" />}
       <section className={`container ${styles.ctaWrap}`}>
         <div className={styles.cta}>
           <div>

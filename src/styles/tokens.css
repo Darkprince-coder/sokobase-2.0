@@ -9,6 +9,7 @@
   --color-ochre: #c97a2b;
   --color-ochre-tint: #f6e9da;
   --color-sold: #8a8f89;
+  --color-sold-text: #4f5650; /* readable on sage (5.9:1); --color-sold is for icons and borders */
   --color-white: #ffffff;
   --color-danger: #b3412c;
 

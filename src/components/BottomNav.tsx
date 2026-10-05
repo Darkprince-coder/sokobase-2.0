@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
 import { Home, LayoutGrid, Store, Heart } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist";
 import styles from "./BottomNav.module.css";
@@ -23,7 +22,7 @@ export default function BottomNav() {
         return (
           <Link key={href} href={href} className={styles.item} aria-current={active ? "page" : undefined}>
             <span className={styles.iconWrap}>
-              {active && <motion.span layoutId="navpill" className={styles.pill} transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+              {active && <span className={styles.pill} aria-hidden="true" />}
               <Icon size={20} className={active ? styles.iconActive : styles.icon} />
               {href === "/saved" && count > 0 && <span className={styles.dot}>{count}</span>}
             </span>

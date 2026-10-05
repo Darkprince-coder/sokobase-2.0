@@ -1,7 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { Heart, MapPin, MessageCircle, Store as StoreIcon } from "lucide-react";
 import ProductGallery from "./ProductGallery";
 import ShareButton from "./ShareButton";
@@ -78,11 +77,10 @@ export default function ProductDetail({ product }: { product: PD }) {
         )}
 
         <div className={styles.actionRow}>
-          <motion.button type="button" className={`${styles.heart} ${saved ? styles.heartOn : ""}`} aria-pressed={saved}
-            aria-label={saved ? "Remove from saved" : "Save this product"} onClick={() => toggle(product.id)}
-            whileTap={{ scale: 0.85 }} animate={saved ? { scale: [1, 1.25, 1] } : { scale: 1 }} transition={{ duration: 0.3 }}>
+          <button type="button" className={`${styles.heart} ${saved ? styles.heartOn : ""}`} aria-pressed={saved}
+            aria-label={saved ? "Remove from saved" : "Save this product"} onClick={() => toggle(product.id)}>
             <Heart size={19} fill={saved ? "currentColor" : "none"} />
-          </motion.button>
+          </button>
           <a href={whatsappLink(product.whatsapp, message)} target="_blank" rel="noopener noreferrer" className={styles.orderDesktop} onClick={() => logOrderClick(product.businessId, product.id)}>
             <MessageCircle size={18} aria-hidden="true" /> {inStock ? "Order on WhatsApp" : "Ask about restock"}
           </a>

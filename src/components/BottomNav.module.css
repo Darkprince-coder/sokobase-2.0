@@ -9,3 +9,5 @@
 .labelActive { color: var(--green); font-weight: 700; }
 .dot { position: absolute; top: -2px; right: 6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--red); color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
 @media (min-width: 768px) { .nav { display: none; } }
+.pill { animation: pillIn 0.25s var(--ease); }
+@keyframes pillIn { from { transform: scaleX(0.6); opacity: 0; } to { transform: none; opacity: 1; } }

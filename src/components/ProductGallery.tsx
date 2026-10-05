@@ -12,7 +12,7 @@ export default function ProductGallery({ images, name }: { images: string[]; nam
   return (
     <div>
       <div className={styles.main}>
-        <Image src={images[active]} alt={name} fill sizes="(max-width: 768px) 100vw, 480px" className={styles.img} priority />
+        <Image src={images[active]} alt={name} fill sizes="(max-width: 768px) 100vw, 480px" className={styles.img} preload />
       </div>
       {images.length > 1 && (
         <div className={styles.thumbs}>

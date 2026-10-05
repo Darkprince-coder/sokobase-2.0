@@ -40,7 +40,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  images: { remotePatterns: [{ protocol: "https", hostname: "res.cloudinary.com" }] },
+  // Images are resized and converted by Cloudinary (src/lib/image-loader.ts), not by this server.
+  images: { loader: "custom", loaderFile: "./src/lib/image-loader.ts", remotePatterns: [{ protocol: "https", hostname: "res.cloudinary.com" }] },
   reactCompiler: true,
   poweredByHeader: false,
   async headers() {

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AnimatePresence, motion, type PanInfo } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion, useReducedMotion, type PanInfo } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { HeroSlide } from "@/lib/types";
 import styles from "./HeroCarousel.module.css";
@@ -21,16 +21,18 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const [paused, setPaused] = useState(false);
   const dragged = useRef(false);
   const many = slides.length > 1;
+  // Respect the phone's "reduce motion" setting: no auto-rotation, and slides cross-fade only.
+  const reduceMotion = useReducedMotion();
 
   const go = useCallback((step: number) => {
     setState(([i]) => [(i + step + slides.length) % slides.length, step]);
   }, [slides.length]);
 
   useEffect(() => {
-    if (!many || paused) return;
+    if (!many || paused || reduceMotion) return;
     const t = setInterval(() => go(1), INTERVAL);
     return () => clearInterval(t);
-  }, [many, paused, go]);
+  }, [many, paused, reduceMotion, go]);
 
   const onDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.x <= -SWIPE) go(1);
@@ -40,6 +42,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
   const slide = slides[index];
   return (
+    <MotionConfig reducedMotion="user">
     <section
       className={styles.hero}
       aria-roledescription="carousel"
@@ -70,7 +73,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           aria-roledescription="slide"
           aria-label={`${index + 1} of ${slides.length}`}
         >
-          {slide.imageUrl && <Image src={slide.imageUrl} alt="" fill priority={index === 0} sizes="(max-width: 1024px) 100vw, 60vw" className={styles.img} draggable={false} />}
+          {slide.imageUrl && <Image src={slide.imageUrl} alt="" fill preload={index === 0} sizes="(max-width: 1024px) 100vw, 60vw" className={styles.img} draggable={false} />}
           <div className={styles.copy}>
             <h1 className={styles.title}>{slide.title}</h1>
             {slide.subtitle && <p className={styles.sub}>{slide.subtitle}</p>}
@@ -91,5 +94,6 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         </>
       )}
     </section>
+    </MotionConfig>
   );
 }

@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
-import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import SiteChrome from "@/components/SiteChrome";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
+import Analytics from "@/components/Analytics";
 import { site } from "@/lib/site";
 import { jsonLdString, websiteJsonLd } from "@/lib/jsonld";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -33,8 +33,6 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#1F7A4D", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
-const gaId = process.env.NEXT_PUBLIC_GA_ID;
-
 async function getCategoriesLite() {
   const { data } = await createPublicClient().from("categories").select("id, slug, name, icon").eq("active", true).order("sort_order");
   return data ?? [];
@@ -52,7 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </SiteChrome>
         </Providers>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(websiteJsonLd) }} />
-        {gaId && process.env.NODE_ENV === "production" && <GoogleAnalytics gaId={gaId} />}
+        <Analytics />
       </body>
     </html>
   );
