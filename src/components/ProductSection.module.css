@@ -8,7 +8,7 @@
 .hot .all { color: #fff; }
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .rail { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 6px; scrollbar-width: thin; }
-.rail > * { flex: 0 0 172px; scroll-snap-align: start; }
-@media (min-width: 640px) { .grid { grid-template-columns: repeat(3, 1fr); gap: 12px; } .rail > * { flex-basis: calc((100% - 36px) / 4); } .card { padding: 18px; } .hot .head { margin: -18px -18px 16px; } }
-@media (min-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); } .rail > * { flex-basis: calc((100% - 60px) / 6); } }
-@media (min-width: 1200px) { .grid { grid-template-columns: repeat(6, 1fr); } }
+.rail > * { flex: 0 0 calc((100% - 10px) / 2.3); scroll-snap-align: start; }
+@media (min-width: 640px) { .grid { grid-template-columns: repeat(3, 1fr); gap: 12px; } .rail > * { flex-basis: calc((100% - 36px) / 3.5); } .card { padding: 18px; } .hot .head { margin: -18px -18px 16px; } }
+@media (min-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); } .rail > * { flex-basis: calc((100% - 48px) / 5); } }
+@media (min-width: 1200px) { .grid { grid-template-columns: repeat(5, 1fr); } }

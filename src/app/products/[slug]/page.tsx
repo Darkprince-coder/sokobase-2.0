@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ProductDetail from "@/components/ProductDetail";
+import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs";
 import ProductSection from "@/components/ProductSection";
 import { getProductBySlug, getShopProducts, getSimilarProducts } from "@/lib/catalog";
 import { site } from "@/lib/site";
@@ -53,8 +54,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         : { "@type": "Offer", priceCurrency: "KES", price: prices[0], availability, url, seller },
   };
 
+  const crumbs: Crumb[] = [{ label: "Products", href: "/products" }];
+  if (product.categorySlug) crumbs.push({ label: product.category, href: `/products?category=${product.categorySlug}` });
+  if (product.categorySlug && product.subcategorySlug && product.subcategory)
+    crumbs.push({ label: product.subcategory, href: `/products?category=${product.categorySlug}&subcategory=${product.subcategorySlug}` });
+  crumbs.push({ label: product.name });
+
   return (
-    <div className="container" style={{ paddingTop: 18 }}>
+    <div className="container" style={{ paddingTop: 8 }}>
+      <Breadcrumbs items={crumbs} />
       <ProductDetail product={product} />
       {fromShop.length > 0 && <ProductSection title={`More from ${product.business}`} href={`/store/${product.businessSlug}`} products={fromShop} layout="rail" />}
       {similar.length > 0 && <ProductSection title="Similar products" href={product.categorySlug ? `/products?category=${product.categorySlug}` : "/products"} products={similar} layout="rail" />}

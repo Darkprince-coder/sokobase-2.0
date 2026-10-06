@@ -1,18 +1,23 @@
 .topbar { background: var(--green-900); color: #d7efe1; font-size: 12.5px; }
-.topInner { display: flex; justify-content: space-between; align-items: center; height: 34px; }
-.topInner a { text-decoration: none; font-weight: 600; color: #fff; }
-.topInner a:hover { text-decoration: underline; }
-.topInner span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 12px; }
+.topInner { display: flex; justify-content: space-between; align-items: center; gap: 12px; height: 32px; }
+.topInner span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.topSell { display: none; flex: none; text-decoration: none; font-weight: 600; color: #fff; }
+.topSell:hover { text-decoration: underline; }
+
 .header { position: sticky; top: 0; z-index: 50; background: var(--white); border-bottom: 1px solid var(--line); }
-.row { display: flex; align-items: center; gap: 24px; height: 68px; }
-.search { display: none; flex: 1; max-width: 640px; }
-.actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-.saved { position: relative; display: flex; align-items: center; gap: 8px; text-decoration: none; padding: 8px 10px; border-radius: var(--radius-md); font-weight: 600; transition: background 0.18s; }
+.row { display: flex; align-items: center; gap: 8px; height: 60px; }
+.menu { display: flex; }
+.cats { display: none; }
+.search { display: none; flex: 1; min-width: 0; max-width: 680px; }
+.actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.saved { position: relative; display: flex; align-items: center; gap: 8px; min-height: 44px; text-decoration: none; padding: 8px 10px; border-radius: var(--radius-md); font-weight: 600; color: var(--ink); transition: background 0.18s; }
 .saved:hover { background: var(--bg); }
 .savedLabel { display: none; }
-.count { position: absolute; top: 2px; left: 24px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.count { position: absolute; top: 4px; left: 24px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; animation: badgePop 0.3s var(--ease); }
+@keyframes badgePop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .sell { display: none; }
 .mobileSearch { padding-bottom: 10px; }
+
 .catnav { display: none; border-top: 1px solid var(--line); }
 .catInner { display: flex; gap: 4px; height: 42px; align-items: center; overflow-x: auto; scrollbar-width: none; }
 .catInner::-webkit-scrollbar { display: none; }
@@ -20,13 +25,17 @@
 .catInner a:hover { background: var(--green-50); color: var(--green-700); }
 .catInner .hot { color: var(--red); font-weight: 700; }
 .catInner .hot:hover { background: var(--red-50); color: var(--red); }
+
+@media (min-width: 520px) { .topSell { display: inline; } }
 @media (min-width: 768px) {
+  .row { gap: 16px; height: 68px; }
   .search { display: block; }
   .mobileSearch { display: none; }
   .savedLabel { display: inline; }
-  .sell { display: inline-flex; }
   .catnav { display: block; }
-  .count { left: 22px; }
 }
-.count { animation: badgePop 0.3s var(--ease); }
-@keyframes badgePop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (min-width: 1024px) {
+  .menu { display: none; }
+  .cats { display: block; }
+  .sell { display: inline-flex; }
+}

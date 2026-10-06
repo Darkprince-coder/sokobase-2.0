@@ -1,0 +1,23 @@
+.root { position: relative; flex: none; }
+.trigger { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; border: 1.5px solid var(--line); border-radius: var(--radius-md); background: var(--white); color: var(--ink); font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; }
+.trigger:hover, .trigger[aria-expanded="true"] { border-color: var(--color-primary); color: var(--color-primary); }
+.trigger svg:last-child { transition: transform 0.2s var(--ease); }
+.flip { transform: rotate(180deg); }
+
+.panel { position: absolute; top: calc(100% + 8px); left: 0; z-index: 80; display: grid; grid-template-columns: 270px 400px; min-height: 360px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-2); overflow: hidden; animation: drop 0.16s var(--ease); }
+@keyframes drop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.list { padding: 8px; border-right: 1px solid var(--line); max-height: 70vh; overflow-y: auto; }
+.item, .itemOn { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 10px; border-radius: var(--radius-sm); text-decoration: none; font-size: 14px; color: var(--ink-2); }
+.item span, .itemOn span { flex: 1; min-width: 0; }
+.item svg:first-child, .itemOn svg:first-child { flex: none; color: var(--ink-3); }
+.itemOn { background: var(--green-50); color: var(--green-700); font-weight: 600; }
+.itemOn svg { color: var(--color-primary) !important; }
+.chev { flex: none; color: var(--line); }
+
+.sub { padding: 18px 20px; }
+.subHead { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--ink); text-decoration: none; margin-bottom: 12px; }
+.subHead:hover { color: var(--color-primary); }
+.subGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; }
+.subGrid a { display: block; padding: 7px 0; font-size: 14px; color: var(--ink-2); text-decoration: none; }
+.subGrid a:hover { color: var(--color-primary); text-decoration: underline; }
+.none { color: var(--ink-3); font-size: 14px; }

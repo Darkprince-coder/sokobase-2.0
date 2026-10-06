@@ -6,6 +6,7 @@ import ListingControls from "@/components/ListingControls";
 import LoadMore from "@/components/LoadMore";
 import ShopCard from "@/components/ShopCard";
 import Button from "@/components/Button";
+import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs";
 import { getCounties, getSubcategories, searchProducts, searchShops, type ProductSort } from "@/lib/catalog";
 import { createPublicClient } from "@/lib/supabase/public";
 import styles from "./products.module.css";
@@ -60,9 +61,17 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const title = q ? `Results for "${q}"` : catName ?? badgeTitle(sp.badge) ?? "All products";
   const nextParams = new URLSearchParams(Object.entries({ ...sp, page: String(page + 1) }).filter(([, v]) => v) as [string, string][]);
   const filtered = !!(sp.county || sp.stock || sp.category || sp.badge || sp.subcategory);
+  const crumbs: Crumb[] = [{ label: "Products", href: (catName || q || sp.badge) ? "/products" : undefined }];
+  if (catName && sp.category) {
+    const sub = subcategories.find((s) => s.slug === sp.subcategory);
+    crumbs.push({ label: catName, href: sub ? `/products?category=${sp.category}` : undefined });
+    if (sub) crumbs.push({ label: sub.name });
+  } else if (q) crumbs.push({ label: `Search: ${q}` });
+  else if (sp.badge) crumbs.push({ label: badgeTitle(sp.badge) ?? "Deals" });
 
   return (
     <div className={`container ${styles.wrap}`}>
+      <Breadcrumbs items={crumbs} />
       <h1 className={styles.title}>{title}</h1>
       <FilterBar category={sp.category} subcategory={sp.subcategory} badge={sp.badge} q={q} subcategories={subcategories} />
       <ListingControls sortOptions={sortOptions} counties={counties} showStock />

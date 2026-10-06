@@ -1,0 +1,8 @@
+.nav { margin: 4px 0 12px; }
+.list { display: flex; align-items: center; overflow-x: auto; scrollbar-width: none; white-space: nowrap; font-size: 13px; color: var(--ink-3); }
+.list::-webkit-scrollbar { display: none; }
+.item { display: inline-flex; align-items: center; min-width: 0; }
+.item a { color: var(--ink-2); text-decoration: none; padding: 6px 2px; }
+.item a:hover { color: var(--color-primary); text-decoration: underline; }
+.item span[aria-current] { color: var(--ink-3); max-width: 46vw; overflow: hidden; text-overflow: ellipsis; padding: 6px 2px; }
+.sep { flex: none; margin: 0 4px; color: var(--ink-3); opacity: 0.6; }

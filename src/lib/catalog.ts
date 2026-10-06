@@ -12,6 +12,7 @@ export type ProductDetail = Product & {
   categoryId: string | null;
   categorySlug: string | null;
   subcategory: string | null;
+  subcategorySlug: string | null;
   businessSlug: string;
 };
 export type Shop = {
@@ -35,7 +36,7 @@ type ProductRow = {
   categories: Rel<NameRow & { slug?: string }>;
 };
 type ProductDetailRow = ProductRow & {
-  description: string | null; specs: Record<string, string> | null; category_id: string | null; subcategories: Rel<NameRow>;
+  description: string | null; specs: Record<string, string> | null; category_id: string | null; subcategories: Rel<NameRow & { slug: string }>;
 };
 type ShopRow = {
   id: string; slug: string; name: string; location: string; logo_url: string | null; verified_at?: string | null;
@@ -155,7 +156,7 @@ export async function getSubcategories(categorySlug: string): Promise<{ id: stri
 export const getProductBySlug = cache(async (slug: string): Promise<ProductDetail | null> => {
   const db = createPublicClient();
   const { data } = await db.from("products")
-    .select("id, slug, name, description, price, old_price, price_type, in_stock, badge, images, specs, category_id, businesses(id, name, slug, location, whatsapp), categories(name, slug), subcategories(name)")
+    .select("id, slug, name, description, price, old_price, price_type, in_stock, badge, images, specs, category_id, businesses(id, name, slug, location, whatsapp), categories(name, slug), subcategories(name, slug)")
     .eq("slug", slug).eq("status", "published").maybeSingle();
   const row = data as ProductDetailRow | null;
   if (!row) return null;
@@ -166,7 +167,7 @@ export const getProductBySlug = cache(async (slug: string): Promise<ProductDetai
   return {
     ...toProduct(row), description: row.description ?? null, images: row.images ?? [],
     specs: row.specs ?? {}, categoryId: row.category_id,
-    categorySlug: cat?.slug ?? null, subcategory: sub?.name ?? null, businessSlug: biz?.slug ?? "",
+    categorySlug: cat?.slug ?? null, subcategory: sub?.name ?? null, subcategorySlug: sub?.slug ?? null, businessSlug: biz?.slug ?? "",
     variants: (variants ?? []).map((v) => ({ id: v.id, label: v.label, price: v.price == null ? null : Number(v.price), oldPrice: v.old_price ? Number(v.old_price) : null, inStock: v.in_stock })),
   };
 });

@@ -23,7 +23,6 @@ export default function Footer() {
         <nav aria-label="Sell" className={styles.col}>
           <h3>Sell</h3>
           <Link href="/sell">List your business</Link>
-          <a href={`${site.portalUrl}/login`} rel="nofollow">Business sign in</a>
         </nav>
         <nav aria-label="Help" className={styles.col}>
           <h3>Help</h3>

@@ -26,15 +26,15 @@ export default function ListingControls({ sortOptions, counties, showStock }: Pr
     <div className={styles.bar} aria-busy={pending}>
       {sortOptions && (
         <label className={styles.control}>
-          <span>Sort</span>
-          <select value={params.get("sort") ?? sortOptions[0].value} onChange={(e) => set("sort", e.target.value === sortOptions[0].value ? null : e.target.value)}>
+          <span className={styles.label}>Sort</span>
+          <select aria-label="Sort by" value={params.get("sort") ?? sortOptions[0].value} onChange={(e) => set("sort", e.target.value === sortOptions[0].value ? null : e.target.value)}>
             {sortOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </label>
       )}
       <label className={styles.control}>
-        <span>County</span>
-        <select value={params.get("county") ?? ""} onChange={(e) => set("county", e.target.value || null)}>
+        <span className={styles.label}>County</span>
+        <select aria-label="County" value={params.get("county") ?? ""} onChange={(e) => set("county", e.target.value || null)}>
           <option value="">All Kenya</option>
           {counties.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
         </select>
@@ -42,7 +42,7 @@ export default function ListingControls({ sortOptions, counties, showStock }: Pr
       {showStock && (
         <label className={styles.toggle}>
           <input type="checkbox" checked={params.get("stock") === "1"} onChange={(e) => set("stock", e.target.checked ? "1" : null)} />
-          In stock only
+          In stock
         </label>
       )}
       {pending && <span className={styles.loading} role="status">Updating…</span>}

@@ -4,6 +4,8 @@ import { Heart } from "lucide-react";
 import Logo from "./Logo";
 import SearchBar from "./SearchBar";
 import Button from "./Button";
+import MenuDrawer from "./MenuDrawer";
+import CategoryMenu from "./CategoryMenu";
 import { useCategories } from "@/lib/categories-context";
 import { useWishlist } from "@/lib/wishlist";
 import styles from "./Header.module.css";
@@ -15,13 +17,15 @@ export default function Header() {
     <>
       <div className={styles.topbar}>
         <div className={`container ${styles.topInner}`}>
-          <span>Order directly on WhatsApp from verified businesses</span>
-          <Link href="/sell">Sell on SokoBase</Link>
+          <span>Order directly on WhatsApp from trusted Kenyan businesses</span>
+          <Link href="/sell" className={styles.topSell}>Sell on SokoBase</Link>
         </div>
       </div>
       <header className={styles.header}>
         <div className={`container ${styles.row}`}>
-          <Logo size={38} />
+          <span className={styles.menu}><MenuDrawer /></span>
+          <Logo size={36} />
+          <span className={styles.cats}><CategoryMenu /></span>
           <div className={styles.search}><SearchBar /></div>
           <div className={styles.actions}>
             <Link href="/saved" className={styles.saved} aria-label={`Saved items${count ? `, ${count}` : ""}`}>
@@ -33,12 +37,14 @@ export default function Header() {
           </div>
         </div>
         <div className={`container ${styles.mobileSearch}`}><SearchBar /></div>
-        <nav className={styles.catnav} aria-label="Categories">
+        <nav className={styles.catnav} aria-label="Popular categories">
           <div className={`container ${styles.catInner}`}>
             <Link href="/products?badge=hot" className={styles.hot}>Hot deals</Link>
-            {categories.slice(0, 8).map((c) => (
+            <Link href="/products?badge=new">New arrivals</Link>
+            {categories.slice(0, 7).map((c) => (
               <Link key={c.slug} href={`/products?category=${c.slug}`}>{c.name}</Link>
             ))}
+            <Link href="/stores">All shops</Link>
           </div>
         </nav>
       </header>

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { BadgeCheck, MapPin, MessageCircle, Store as StoreIcon } from "lucide-react";
+import { BadgeCheck, MapPin, Store as StoreIcon } from "lucide-react";
+import WhatsAppIcon from "@/components/WhatsAppIcon";
 import StoreProducts from "@/components/StoreProducts";
 import ShareButton from "@/components/ShareButton";
 import ReportListing from "@/components/ReportListing";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import Button from "@/components/Button";
 import { getShopStatus, getStoreBySlug } from "@/lib/catalog";
 import ComingSoon from "@/components/ComingSoon";
@@ -45,10 +47,17 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
 
   return (
     <div className={styles.page}>
-      {store.coverUrl && <div className={styles.cover}><Image src={store.coverUrl} alt="" fill sizes="100vw" className={styles.coverImg} /></div>}
-      <div className={`container ${styles.head}`}>
+      <div className="container">
+        <Breadcrumbs items={[{ label: "Shops", href: "/stores" }, { label: store.name }]} />
+        {store.coverUrl && (
+          <div className={styles.cover}>
+            <Image src={`${store.coverUrl}#cover`} alt="" fill sizes="(max-width: 1200px) 100vw, 1140px" className={styles.coverImg} preload />
+          </div>
+        )}
+      </div>
+      <div className={`container ${styles.head} ${store.coverUrl ? styles.withCover : ""}`}>
         <span className={styles.logo}>
-          {store.logoUrl ? <Image src={store.logoUrl} alt={store.name} width={72} height={72} className={styles.logoImg} /> : <StoreIcon size={30} aria-hidden="true" />}
+          {store.logoUrl ? <Image src={`${store.logoUrl}#logo`} alt={store.name} width={88} height={88} className={styles.logoImg} /> : <StoreIcon size={32} aria-hidden="true" />}
         </span>
         <div className={styles.info}>
           <h1 className={styles.name}>{store.name}{store.verified && <BadgeCheck size={20} className={styles.verified} aria-label="Verified business" />}</h1>
@@ -57,7 +66,7 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
           {store.description && <p className={styles.desc}>{store.description}</p>}
         </div>
         <div className={styles.actions}>
-          <Button href={whatsappLink(store.whatsapp, `Hi ${store.name}, I found your shop on SokoBase.`)} external icon={<MessageCircle size={16} />}>Chat on WhatsApp</Button>
+          <Button href={whatsappLink(store.whatsapp, `Hi ${store.name}, I found your shop on SokoBase.`)} external icon={<WhatsAppIcon size={18} />}>Chat on WhatsApp</Button>
           <ShareButton url={url} title={store.name} text={`Check out ${store.name} on SokoBase`} />
         </div>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, type ReactNode } from "react";
 
-export type CategoryLite = { id: string; slug: string; name: string; icon: string | null };
+export type CategoryLite = { id: string; slug: string; name: string; icon: string | null; subs: { slug: string; name: string }[] };
 const Ctx = createContext<CategoryLite[]>([]);
 
 // Categories are admin-managed (Admin > Categories) and fetched once in the root layout, then

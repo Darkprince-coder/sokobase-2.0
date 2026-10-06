@@ -5,6 +5,7 @@ import ShopCard from "@/components/ShopCard";
 import ListingControls from "@/components/ListingControls";
 import LoadMore from "@/components/LoadMore";
 import Button from "@/components/Button";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { findShops, getCounties } from "@/lib/catalog";
 import { createPublicClient } from "@/lib/supabase/public";
 import styles from "./stores.module.css";
@@ -43,6 +44,7 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className={`container ${styles.wrap}`}>
+      <Breadcrumbs items={countyName ? [{ label: "Shops", href: "/stores" }, { label: countyName }] : [{ label: "Shops" }]} />
       <h1 className={styles.title}>{countyName ? `Shops in ${countyName}` : "All shops"}</h1>
 
       <form action="/stores" method="get" role="search" className={styles.search}>

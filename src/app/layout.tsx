@@ -33,9 +33,14 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#1F7A4D", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
+// Categories with their subcategories, for the header menu, sidebar and filters.
 async function getCategoriesLite() {
-  const { data } = await createPublicClient().from("categories").select("id, slug, name, icon").eq("active", true).order("sort_order");
-  return data ?? [];
+  const db = createPublicClient();
+  const [{ data: cats }, { data: subs }] = await Promise.all([
+    db.from("categories").select("id, slug, name, icon").eq("active", true).order("sort_order"),
+    db.from("subcategories").select("slug, name, category_id").eq("active", true).order("sort_order"),
+  ]);
+  return (cats ?? []).map((c) => ({ ...c, subs: (subs ?? []).filter((s) => s.category_id === c.id).map(({ slug, name }) => ({ slug, name })) }));
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

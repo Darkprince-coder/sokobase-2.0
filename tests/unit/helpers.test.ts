@@ -86,6 +86,13 @@ describe("Cloudinary image loader", () => {
     expect(cloudinaryLoader({ src: "https://res.cloudinary.com/demo/image/upload/v1/a.jpg", width: 300, quality: 60 }))
       .toContain("q_60");
   });
+  it("applies framing hints and strips them from the URL", () => {
+    const base = "https://res.cloudinary.com/demo/image/upload/v1/p.jpg";
+    expect(cloudinaryLoader({ src: `${base}#fill`, width: 400 })).toBe("https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,c_fill,g_auto,ar_1:1,w_400/v1/p.jpg");
+    expect(cloudinaryLoader({ src: `${base}#pad`, width: 800 })).toContain("c_pad,b_white,ar_1:1,w_800");
+    expect(cloudinaryLoader({ src: `${base}#unknown`, width: 100 })).toContain("c_limit,w_100");
+    expect(cloudinaryLoader({ src: "/local.png#fill", width: 100 })).toBe("/local.png");
+  });
   it("leaves other URLs untouched", () => {
     expect(cloudinaryLoader({ src: "/icons/icon-192.png", width: 192 })).toBe("/icons/icon-192.png");
   });

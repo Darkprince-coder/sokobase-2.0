@@ -22,7 +22,7 @@ export default function ContactPage() {
       <p>See plans and how joining works on the <Link href="/sell">Sell on SokoBase</Link> page.</p>
 
       <h2>Already a SokoBase business?</h2>
-      <p>Sign in to your dashboard from the link in the footer. Forgot your password? Use &ldquo;Forgot password?&rdquo; on the sign-in page.</p>
+      <p>Use the private sign-in link we sent you when your shop was set up. Can&rsquo;t find it? Message us on WhatsApp and we&rsquo;ll resend it.</p>
     </InfoPage>
   );
 }
