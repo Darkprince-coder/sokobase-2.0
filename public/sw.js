@@ -1,6 +1,6 @@
 // SokoBase service worker. Page navigations always hit the network (offline fallback only),
 // so product data is never served stale.
-const VERSION = "sokobase-v2";
+const VERSION = "sokobase-v3";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
 const OFFLINE_URL = "/offline";
@@ -22,12 +22,13 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // Supabase, Cloudinary etc. never cached here
-  if (/^\/(api|admin|dashboard)/.test(url.pathname)) return;
-
+  // Navigations always go to the network (nothing is cached); offline, show the offline page.
+  // This includes the dashboard, so the business app shows a friendly page with no signal.
   if (req.mode === "navigate") {
     event.respondWith(fetch(req).catch(() => caches.match(OFFLINE_URL)));
     return;
   }
+  if (/^\/(api|admin|dashboard)/.test(url.pathname)) return;
   if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
     event.respondWith(
       caches.open(STATIC_CACHE).then(async (cache) => {

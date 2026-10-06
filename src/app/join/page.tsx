@@ -8,8 +8,10 @@ import { getSessionUser } from "@/lib/auth";
 import { site, whatsappLink } from "@/lib/site";
 import { isPast } from "@/lib/dates";
 import styles from "@/components/AuthCard.module.css";
+import { portalAppMetadata, portalViewport } from "@/lib/portal-app";
 
-export const metadata: Metadata = { title: "Set up your shop", robots: { index: false, follow: false } };
+export const metadata: Metadata = { ...portalAppMetadata, title: "Set up your shop", robots: { index: false, follow: false } };
+export const viewport = portalViewport;
 
 const CODE_RE = /^[A-Z0-9]{4}-[A-Z0-9]{4}$/;
 

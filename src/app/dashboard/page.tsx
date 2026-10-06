@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { CheckCircle2, Package, FileEdit, MessageCircle, Eye, Store } from "lucide-react";
+import { CheckCircle2, Package, FileEdit, MessageCircle, Store } from "lucide-react";
 import { requireBusiness } from "@/lib/auth";
-import { getPlanUsage, getOrderClicks30 } from "@/lib/dashboard";
+import { getPlanUsage, getOrderClicks30, shopVisibility } from "@/lib/dashboard";
+import ViewShopLink from "@/components/dashboard/ViewShopLink";
+import InstallBizApp from "@/components/dashboard/InstallBizApp";
 import { formatDate } from "@/lib/dates";
-import { site } from "@/lib/site";
+import { site, whatsappLink } from "@/lib/site";
 import UsageBar from "@/components/dashboard/UsageBar";
 import ShareKit from "@/components/dashboard/ShareKit";
 import Button from "@/components/Button";
@@ -39,13 +41,19 @@ export default async function DashboardOverview() {
     { done: (withPhotos ?? 0) >= 5, label: "Publish 5 products with photos", href: "/dashboard/products/new" },
   ];
   const doneCount = steps.filter((s) => s.done).length;
+  const visibility = shopVisibility(business.status, usage);
+  const contact = site.supportWhatsapp
+    ? whatsappLink(site.supportWhatsapp, visibility === "expired" ? `Hi SokoBase, I'd like to renew the ${usage.planName ?? ""} plan for ${business.name}.` : `Hi SokoBase, I need help with my shop ${business.name}.`)
+    : null;
 
   return (
     <>
       <header className={styles.head}>
         <div><h1>{business.name}</h1><p className={styles.sub}>{shopUrl.replace(/^https?:\/\//, "")}</p></div>
-        <Button href={shopUrl} external size="sm" variant="outline" icon={<Eye size={15} />}>View shop</Button>
+        <ViewShopLink asButton href={shopUrl} visibility={visibility} endedOn={usage.endsAt ? formatDate(usage.endsAt) : null} renewHref={contact} />
       </header>
+
+      <InstallBizApp />
 
       <div className={styles.stats}>
         <div className={styles.stat}><span className={styles.statIcon}><Package size={18} /></span><div><div className={styles.statNum}>{published ?? 0}</div><div className={styles.statLabel}>Published</div></div></div>

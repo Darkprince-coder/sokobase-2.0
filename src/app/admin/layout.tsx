@@ -5,8 +5,10 @@ import AdminNav from "@/components/admin/AdminNav";
 import { requireSuperAdmin } from "@/lib/auth";
 import { signOut } from "@/app/login/actions";
 import styles from "@/components/admin/admin.module.css";
+import { portalAppMetadata, portalViewport } from "@/lib/portal-app";
 
-export const metadata: Metadata = { title: { default: "Admin", template: "%s | Admin" }, robots: { index: false, follow: false } };
+export const metadata: Metadata = { ...portalAppMetadata, title: { default: "Admin", template: "%s | Admin" }, robots: { index: false, follow: false } };
+export const viewport = portalViewport;
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user } = await requireSuperAdmin();

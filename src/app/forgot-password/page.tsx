@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import AuthCard from "@/components/AuthCard";
 import { ForgotPasswordForm } from "@/components/PasswordResetForms";
+import { portalAppMetadata, portalViewport } from "@/lib/portal-app";
 
-export const metadata: Metadata = { title: "Reset your password", robots: { index: false, follow: false } };
+export const metadata: Metadata = { ...portalAppMetadata, title: "Reset your password", robots: { index: false, follow: false } };
+export const viewport = portalViewport;
 
 export default async function ForgotPasswordPage({ searchParams }: { searchParams: Promise<{ expired?: string }> }) {
   const { expired } = await searchParams;

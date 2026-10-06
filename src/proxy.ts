@@ -10,14 +10,21 @@ const SITE_HOST = process.env.NEXT_PUBLIC_SITE_HOST ?? "";
 const PORTAL_PATHS = ["/login", "/admin", "/dashboard", "/join", "/forgot-password", "/reset-password", "/auth"];
 const isPortalPath = (path: string) => PORTAL_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
 // Shared by both hosts: route handlers and root-level files such as /icon.svg or /robots.txt.
-const isShared = (path: string) => path.startsWith("/api/") || /\.[a-z0-9]+$/i.test(path);
+// /offline is the service worker's fallback page, needed by both the customer and the business app.
+const isShared = (path: string) => path.startsWith("/api/") || path === "/offline" || /\.[a-z0-9]+$/i.test(path);
+// Short address to say on a call or put in a WhatsApp message: sokobase.co.ke/biz opens the dashboard.
+const isBizShortcut = (path: string) => path === "/biz" || path === "/biz/";
 
 export async function proxy(request: NextRequest) {
-  if (process.env.NODE_ENV !== "production" || !PORTAL_HOST) return updateSession(request);
+  if (process.env.NODE_ENV !== "production" || !PORTAL_HOST) {
+    if (isBizShortcut(request.nextUrl.pathname)) return NextResponse.redirect(new URL("/dashboard", request.url));
+    return updateSession(request);
+  }
 
   const host = (request.headers.get("host") ?? "").split(":")[0].toLowerCase();
   const path = request.nextUrl.pathname;
   const onPortal = host === PORTAL_HOST.toLowerCase();
+  if (isBizShortcut(path)) return NextResponse.redirect(`https://${PORTAL_HOST}/dashboard`);
 
   if (onPortal) {
     if (path === "/") return NextResponse.redirect(new URL("/login", request.url));

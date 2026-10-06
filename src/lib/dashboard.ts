@@ -48,7 +48,18 @@ export async function getPlanUsage(db: Awaited<ReturnType<typeof bizDb>>["db"], 
   const plan = Array.isArray(sub?.plans) ? sub?.plans[0] : sub?.plans;
   const live = !!sub && sub.status === "active" && new Date(sub.ends_at).getTime() > Date.now();
   const graceEndsAt = sub ? new Date(new Date(sub.ends_at).getTime() + GRACE_DAYS * 86400000).toISOString() : null;
-  return { count: count ?? 0, limit: plan?.product_limit ?? null, planName: plan?.name ?? null, live, endsAt: sub?.ends_at ?? null, graceEndsAt };
+  return { count: count ?? 0, limit: plan?.product_limit ?? null, planName: plan?.name ?? null, live, endsAt: sub?.ends_at ?? null, graceEndsAt, subStatus: sub?.status ?? null };
+}
+
+export type ShopVisibility = "public" | "suspended" | "expired" | "no-plan";
+
+// Mirrors business_is_public() in the database (0007): active shop + an active plan that hasn't
+// ended more than GRACE_DAYS ago. Used to explain to the owner why customers can't see the shop.
+export function shopVisibility(businessStatus: string, usage: Awaited<ReturnType<typeof getPlanUsage>>): ShopVisibility {
+  if (businessStatus !== "active") return "suspended";
+  if (!usage.endsAt || !usage.graceEndsAt || usage.subStatus !== "active") return "no-plan";
+  if (new Date(usage.graceEndsAt).getTime() <= Date.now()) return "expired";
+  return "public";
 }
 
 // order_clicks is service-role only (see 0002_rls_and_grants.sql). This is the single narrow

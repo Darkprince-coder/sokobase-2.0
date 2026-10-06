@@ -5,8 +5,10 @@ import Button from "@/components/Button";
 import { ResetPasswordForm } from "@/components/PasswordResetForms";
 import { getSessionUser } from "@/lib/auth";
 import { RECOVERY_COOKIE } from "@/lib/recovery";
+import { portalAppMetadata, portalViewport } from "@/lib/portal-app";
 
-export const metadata: Metadata = { title: "Set a new password", robots: { index: false, follow: false } };
+export const metadata: Metadata = { ...portalAppMetadata, title: "Set a new password", robots: { index: false, follow: false } };
+export const viewport = portalViewport;
 
 export default async function ResetPasswordPage() {
   const [{ user }, jar] = await Promise.all([getSessionUser(), cookies()]);

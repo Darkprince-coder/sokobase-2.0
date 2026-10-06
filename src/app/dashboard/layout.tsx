@@ -4,17 +4,26 @@ import Logo from "@/components/Logo";
 import DashNav from "@/components/dashboard/DashNav";
 import DashTabBar from "@/components/dashboard/DashTabBar";
 import { requireBusiness } from "@/lib/auth";
-import { getPlanUsage } from "@/lib/dashboard";
+import { getPlanUsage, shopVisibility } from "@/lib/dashboard";
+import ViewShopLink from "@/components/dashboard/ViewShopLink";
 import { daysLeft, formatDate, isPast } from "@/lib/dates";
 import { site, whatsappLink } from "@/lib/site";
 import { signOut } from "@/app/login/actions";
 import styles from "@/components/dashboard/dash.module.css";
+import { portalAppMetadata, portalViewport } from "@/lib/portal-app";
 
-export const metadata: Metadata = { title: { default: "Dashboard", template: "%s | Dashboard" }, robots: { index: false, follow: false } };
+export const metadata: Metadata = { ...portalAppMetadata, title: { default: "Dashboard", template: "%s | Dashboard" }, robots: { index: false, follow: false } };
+export const viewport = portalViewport;
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { supabase, business } = await requireBusiness();
   const usage = business ? await getPlanUsage(supabase, business.id) : null;
+  const visibility = business && usage ? shopVisibility(business.status, usage) : null;
+  const contact = business && site.supportWhatsapp
+    ? whatsappLink(site.supportWhatsapp, visibility === "expired"
+      ? `Hi SokoBase, I'd like to renew the ${usage?.planName ?? ""} plan for ${business.name}.`
+      : `Hi SokoBase, I need help with my shop ${business.name}.`)
+    : null;
 
   return (
     <div className={styles.shell}>
@@ -25,12 +34,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
         <DashNav />
         <div className={styles.sideFoot}>
-          {business ? <a href={`${site.url}/store/${business.slug}`} target="_blank" rel="noopener noreferrer">View my shop</a> : <a href={site.url}>View site</a>}
+          {business && visibility
+            ? <ViewShopLink href={`${site.url}/store/${business.slug}`} visibility={visibility} endedOn={usage?.endsAt ? formatDate(usage.endsAt) : null} renewHref={contact} />
+            : <a href={site.url}>View site</a>}
           <form action={signOut}><button type="submit">Sign out</button></form>
         </div>
       </aside>
       <div className={styles.content}>
-        {business && usage && banner(usage, business.name)}
+        {business && visibility === "suspended" ? (
+          <div className={styles.warnBanner} role="status">
+            <AlertTriangle size={18} aria-hidden="true" />
+            <span><strong>Your shop is paused by SokoBase</strong> and customers can&apos;t see it. Your products are saved.{contact ? <> <a href={contact} target="_blank" rel="noopener noreferrer">Message us on WhatsApp</a>.</> : " Contact SokoBase for help."}</span>
+          </div>
+        ) : business && usage && banner(usage, business.name)}
         {children}
       </div>
       {business && <DashTabBar />}
