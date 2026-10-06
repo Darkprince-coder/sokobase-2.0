@@ -2,12 +2,13 @@
 import { useEffect } from "react";
 import { RotateCw, TriangleAlert } from "lucide-react";
 import Button from "@/components/Button";
+import { reportError } from "@/lib/monitoring";
 import styles from "@/components/StatusPage.module.css";
 
 // Shown when a page fails to render (e.g. a network hiccup reaching the database). The rest of the
 // app (header, navigation) keeps working, and "Try again" re-renders just this page.
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  useEffect(() => { console.error(error); }, [error]);
+  useEffect(() => { console.error(error); reportError(error); }, [error]);
   return (
     <section className={`container ${styles.wrap}`}>
       <span className={`${styles.icon} ${styles.warn}`}><TriangleAlert size={30} aria-hidden="true" /></span>

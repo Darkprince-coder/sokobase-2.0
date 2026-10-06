@@ -24,6 +24,7 @@ const recommended: Record<string, string> = {
   CLOUDINARY_API_KEY: "uploads use the unsigned preset instead of signed uploads",
   CLOUDINARY_API_SECRET: "uploads use the unsigned preset instead of signed uploads",
   NEXT_PUBLIC_GA_ID: "Google Analytics is off (set your real G-... measurement ID)",
+  NEXT_PUBLIC_SENTRY_DSN: "error monitoring is off (create a free Sentry project and paste its DSN)",
   ORDER_CLICK_SALT: "order-click fingerprints are salted with the service role key instead",
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: "bot protection on sign-in and password reset is off",
   TURNSTILE_SECRET_KEY: "bot protection on sign-in and password reset is off",

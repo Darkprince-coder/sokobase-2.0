@@ -1,10 +1,11 @@
 "use client";
 import { useEffect } from "react";
+import { reportError } from "@/lib/monitoring";
 
 // Last-resort error screen if the root layout itself fails. It replaces the whole page, so it
 // carries its own <html>, <body> and minimal inline styles (no app CSS is guaranteed to load).
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  useEffect(() => { console.error(error); }, [error]);
+  useEffect(() => { console.error(error); reportError(error); }, [error]);
   return (
     <html lang="en-KE">
       <body style={{ margin: 0, fontFamily: "system-ui, sans-serif", background: "#FAF7F2", color: "#14201B" }}>

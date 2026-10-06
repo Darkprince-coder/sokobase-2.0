@@ -18,6 +18,7 @@ const csp = [
     "connect-src 'self'",
     supabaseHost && `https://${supabaseHost} wss://${supabaseHost}`,
     "https://api.cloudinary.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://challenges.cloudflare.com",
+    "https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io", // error monitoring
   ].filter(Boolean).join(" "),
   "worker-src 'self'",
   "manifest-src 'self'",
