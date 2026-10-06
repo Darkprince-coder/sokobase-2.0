@@ -44,6 +44,10 @@ const nextConfig: NextConfig = {
   images: { loader: "custom", loaderFile: "./src/lib/image-loader.ts", remotePatterns: [{ protocol: "https", hostname: "res.cloudinary.com" }] },
   reactCompiler: true,
   poweredByHeader: false,
+  // Pages from the previous SokoBase site that Google has indexed (see also /listings and /rentals routes).
+  async redirects() {
+    return ["/browse", "/categories", "/rentals", "/requests"].map((source) => ({ source, destination: "/products", permanent: true }));
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
