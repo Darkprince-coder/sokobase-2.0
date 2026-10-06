@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const isProd = process.env.NODE_ENV === "production";
+const siteHost = process.env.NEXT_PUBLIC_SITE_HOST ?? "";
 const supabaseHost = (() => {
   try { return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").host; } catch { return ""; }
 })();
@@ -16,6 +17,7 @@ const csp = [
   "font-src 'self' data:",
   [
     "connect-src 'self'",
+    siteHost && `https://${siteHost}`, // portal pages may prefetch public pages (different host)
     supabaseHost && `https://${supabaseHost} wss://${supabaseHost}`,
     "https://api.cloudinary.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://challenges.cloudflare.com",
     "https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io", // error monitoring
@@ -31,8 +33,8 @@ const csp = [
 ].filter(Boolean).join("; ");
 
 const securityHeaders = [
-  // Report-only until verified on real devices; then rename to Content-Security-Policy.
-  { key: "Content-Security-Policy-Report-Only", value: csp },
+  // Enforced after a clean report-only run on the live site and real phones (Oct 2026).
+  { key: "Content-Security-Policy", value: csp },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
