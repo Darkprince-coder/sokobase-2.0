@@ -7,6 +7,7 @@ import ImageUpload from "./ImageUpload";
 import { saveHeroSlides } from "@/app/admin/actions";
 import type { ActionState } from "@/lib/action-state";
 import styles from "./admin.module.css";
+import { keepFormSubmit } from "@/lib/keep-form";
 
 export type Slide = { id: string; title: string; subtitle: string; ctaLabel: string; href: string; imageUrl: string; imageOnly?: boolean };
 const newId = () => Math.random().toString(36).slice(2, 10);
@@ -23,7 +24,7 @@ export default function HeroEditor({ initial }: { initial: Slide[] }) {
   });
 
   return (
-    <form action={action}>
+    <form onSubmit={keepFormSubmit(action)}>
       <input type="hidden" name="slides" value={JSON.stringify(slides)} />
       {slides.length === 0 && <p className={styles.empty}>No slides. The default green banner shows on the home page.</p>}
       <AnimatePresence initial={false}>

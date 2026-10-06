@@ -4,6 +4,7 @@ import { Flag, X } from "lucide-react";
 import Button from "./Button";
 import { submitReport, type ReportState } from "@/app/report/actions";
 import styles from "./ReportListing.module.css";
+import { keepFormSubmit } from "@/lib/keep-form";
 
 const REASONS = [
   { value: "scam", label: "Looks like a scam or fraud" },
@@ -35,7 +36,7 @@ export default function ReportListing({ businessId, productId, label = "Report t
               <Button type="button" onClick={close}>Close</Button>
             </>
           ) : (
-            <form action={action} className={styles.form}>
+            <form onSubmit={keepFormSubmit(action)} className={styles.form}>
               <input type="hidden" name="business_id" value={businessId} />
               {productId && <input type="hidden" name="product_id" value={productId} />}
               <fieldset className={styles.reasons}>

@@ -8,6 +8,7 @@ import { whatsappLink } from "@/lib/site";
 import type { ActionState } from "@/lib/action-state";
 import f from "./ProductForm.module.css";
 import styles from "./ProfileForm.module.css";
+import { keepFormSubmit } from "@/lib/keep-form";
 
 const MAX_CATEGORIES = 3;
 type Category = { id: string; name: string };
@@ -38,7 +39,7 @@ export default function ProfileForm({ business, categories, counties }: { busine
   const img = (url: string, t: string) => url.replace("/image/upload/", `/image/upload/${t},f_auto,q_auto/`);
 
   return (
-    <form action={action} className={f.form} noValidate>
+    <form onSubmit={keepFormSubmit(action)} className={f.form} noValidate>
       <span id="p-top" />
       <input type="hidden" name="logo_url" value={logoUrl} />
       <input type="hidden" name="cover_url" value={coverUrl} />

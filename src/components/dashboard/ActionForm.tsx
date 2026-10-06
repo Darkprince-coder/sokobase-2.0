@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import Button from "@/components/Button";
 import type { ActionState } from "@/lib/action-state";
 import styles from "./dash.module.css";
+import { keepFormSubmit } from "@/lib/keep-form";
 
 type Props = {
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
@@ -20,7 +21,7 @@ export default function ActionForm({ action, children, submitLabel, resetOnSucce
   useEffect(() => { if (state.ok && resetOnSuccess) ref.current?.reset(); }, [state, resetOnSuccess]);
 
   return (
-    <form ref={ref} action={formAction} className={styles.form}>
+    <form ref={ref} onSubmit={keepFormSubmit(formAction)} className={styles.form}>
       {children}
       <AnimatePresence mode="wait">
         {(state.error || state.message) && (

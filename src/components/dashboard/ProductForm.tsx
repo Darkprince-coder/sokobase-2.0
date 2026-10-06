@@ -6,6 +6,9 @@ import OptionsEditor, { type ComboOverride } from "./OptionsEditor";
 import { saveProduct } from "@/app/dashboard/actions";
 import { buildCombos, comboKey, normaliseGroups, photoGroupOf, type Combo, type OptionGroup } from "@/lib/variants";
 import type { ActionState } from "@/lib/action-state";
+import { buildProductPayload } from "@/lib/product-input";
+import { isOwnImageUrl } from "@/lib/cloudinary";
+import { keepFormSubmit } from "@/lib/keep-form";
 import { site } from "@/lib/site";
 import styles from "./ProductForm.module.css";
 
@@ -74,7 +77,36 @@ export default function ProductForm({ product, categories, subcategories, remain
   }), [cleanGroups, overrides, colourPhotos, colourGroup]);
 
   const subcatOptions = useMemo(() => subcategories.filter((s) => s.category_id === categoryId), [subcategories, categoryId]);
-  const fieldError = (f: string) => (state.field === f ? state.error : undefined);
+  // Problems found on the phone before sending (same rules as the server), so nothing is lost and
+  // the person sees exactly what to fix. Server errors still show if something fails there.
+  const [local, setLocal] = useState<{ field: string; error: string } | null>(null);
+  const shown = local ?? (pending ? null : state.field ? { field: state.field, error: state.error ?? "" } : null);
+  const fieldError = (f: string) => (shown?.field === f ? shown.error : undefined);
+
+  const checkBeforeSend = (fd: FormData) => {
+    const result = buildProductPayload({
+      name: String(fd.get("name") ?? ""),
+      description: String(fd.get("description") ?? ""),
+      categoryId: String(fd.get("category_id") ?? ""),
+      subcategoryId: String(fd.get("subcategory_id") ?? ""),
+      badge: String(fd.get("badge") ?? ""),
+      images,
+      price: String(fd.get("price") ?? ""),
+      oldPrice: String(fd.get("old_price") ?? ""),
+      priceOnRequest: onRequest,
+      inStock,
+      publish: fd.get("intent") !== "draft",
+      specs,
+      options: cleanGroups,
+      combos,
+      samePrice,
+    }, isOwnImageUrl);
+    if (result.ok) { setLocal(null); return true; }
+    setLocal({ field: result.field, error: result.error });
+    if (result.field === "category" || result.field === "description") setMoreOpen(true);
+    requestAnimationFrame(() => document.getElementById(`f-${result.field}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    return false;
+  };
 
   // Bring the first problem into view after a failed save.
   useEffect(() => {
@@ -83,7 +115,7 @@ export default function ProductForm({ product, categories, subcategories, remain
     target?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [state]);
   // "More details" opens by itself when the problem is inside it.
-  const detailsOpen = moreOpen || (!!state.field && ["category", "description"].includes(state.field));
+  const detailsOpen = moreOpen || (!!shown?.field && ["category", "description"].includes(shown.field));
 
   if (!product && remaining !== null && remaining <= 0) {
     return (
@@ -94,7 +126,7 @@ export default function ProductForm({ product, categories, subcategories, remain
   }
 
   return (
-    <form action={action} className={styles.form} noValidate>
+    <form onSubmit={keepFormSubmit(action, checkBeforeSend)} className={styles.form} noValidate>
       <span id="f-top" />
       {product && <input type="hidden" name="id" value={product.id} />}
       <input type="hidden" name="images" value={JSON.stringify(images)} />
@@ -229,8 +261,8 @@ export default function ProductForm({ product, categories, subcategories, remain
       </section>
 
       <div className={styles.saveBar}>
-        {state.error && !state.field && <p role="alert" className={styles.barError}>{state.error}</p>}
-        {state.error && state.field && <p role="alert" className={styles.barError}>Please fix the highlighted item above.</p>}
+        {!pending && !local && state.error && !state.field && <p role="alert" className={styles.barError}>{state.error}</p>}
+        {shown && <p role="alert" className={styles.barError}>Please fix the highlighted item above: {shown.error}</p>}
         <div className={styles.saveButtons}>
           <button type="submit" name="intent" value="draft" className={styles.draftBtn} disabled={pending}>Save as draft</button>
           <button type="submit" name="intent" value="publish" className={styles.publishBtn} disabled={pending}>

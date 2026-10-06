@@ -17,3 +17,6 @@
 /* Installed app (opened from the home-screen icon): no website footer, it should feel like an app.
    Help, About, Privacy and Terms remain in the menu drawer. */
 @media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) { .footer { display: none; } }
+
+/* Phones and small tablets show the bottom nav instead (same breakpoint as BottomNav). */
+@media (max-width: 767px) { .footer { display: none; } }

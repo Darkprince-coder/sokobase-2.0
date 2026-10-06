@@ -7,6 +7,7 @@ import { createInvite } from "@/app/admin/actions";
 import { formatDate } from "@/lib/dates";
 import type { ActionState } from "@/lib/action-state";
 import styles from "./admin.module.css";
+import { keepFormSubmit } from "@/lib/keep-form";
 
 type Plan = { id: string; name: string; price_kes: number; duration_days: number };
 
@@ -21,7 +22,7 @@ export default function InviteForm({ plans }: { plans: Plan[] }) {
 
   return (
     <div className={styles.form}>
-      <form action={action} className={styles.form}>
+      <form onSubmit={keepFormSubmit(action)} className={styles.form}>
         <div className={styles.grid2}>
           <label className={styles.field}>
             Plan

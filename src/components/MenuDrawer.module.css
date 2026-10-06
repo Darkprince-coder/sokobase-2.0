@@ -42,3 +42,4 @@
 .help a { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; text-decoration: none; color: var(--ink-2); font-size: 14px; }
 .legal { font-size: 13px; color: var(--ink-3); padding-top: 6px; }
 .legal a { display: inline; min-height: 0; color: var(--ink-3); }
+.install:not(:empty) { padding-top: 10px; }

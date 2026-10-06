@@ -2,10 +2,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Flame, Heart, Home, Info, LayoutGrid, Mail, Menu, Store, X } from "lucide-react";
+import { ChevronDown, Flame, Heart, Home, Info, LayoutGrid, Mail, Menu, MessageCircle, Store, X } from "lucide-react";
 import { useCategories } from "@/lib/categories-context";
 import { CategoryIcon } from "@/lib/icon-map";
 import { LogoMark } from "./Logo";
+import InstallButton from "./InstallButton";
+import { site, whatsappLink } from "@/lib/site";
 import styles from "./MenuDrawer.module.css";
 
 // Site menu (all screen sizes). A native <dialog> gives focus trapping, Esc to close and an
@@ -78,7 +80,9 @@ export default function MenuDrawer() {
           <nav aria-label="Help" className={styles.help}>
             <Link href="/about"><Info size={16} aria-hidden="true" />About SokoBase</Link>
             <Link href="/contact"><Mail size={16} aria-hidden="true" />Contact us</Link>
+            {site.supportWhatsapp && <a href={whatsappLink(site.supportWhatsapp, "Hi SokoBase")} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} aria-hidden="true" />Chat with us on WhatsApp</a>}
             <span className={styles.legal}><Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link></span>
+            <span className={styles.install}><InstallButton /></span>
           </nav>
         </div>
       </dialog>

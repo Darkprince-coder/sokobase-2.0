@@ -121,7 +121,7 @@ export default async function BusinessDetail({ params }: { params: Promise<{ id:
                 ? `Ended on ${formatDate(latest.ends_at)}. The shop stays visible for 7 days after the end date, then hides until renewed.`
                 : "No subscription yet."}
           </p>
-          <ActionForm action={renewSubscription} submitLabel="Save subscription">
+          <ActionForm action={renewSubscription} submitLabel="Save subscription" resetOnSuccess>
             <input type="hidden" name="business_id" value={b.id} />
             <div className={styles.grid2}>
               <label className={styles.field}>Plan

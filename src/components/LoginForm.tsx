@@ -7,13 +7,14 @@ import Button from "./Button";
 import Turnstile from "./Turnstile";
 import { login, type LoginState } from "@/app/login/actions";
 import styles from "./LoginForm.module.css";
+import { keepFormSubmit } from "@/lib/keep-form";
 
 export default function LoginForm() {
   const [state, action, pending] = useActionState<LoginState, FormData>(login, {});
   const [show, setShow] = useState(false);
 
   return (
-    <form action={action} className={styles.form} noValidate>
+    <form onSubmit={keepFormSubmit(action)} className={styles.form} noValidate>
       <label className={styles.field}>
         <span>Email</span>
         <input type="email" name="email" autoComplete="email" required inputMode="email" />

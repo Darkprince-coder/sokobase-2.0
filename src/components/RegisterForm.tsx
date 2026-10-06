@@ -7,6 +7,7 @@ import LogoUpload from "./LogoUpload";
 import { registerBusiness } from "@/app/join/actions";
 import type { ActionState } from "@/lib/action-state";
 import styles from "./RegisterForm.module.css";
+import { keepFormSubmit } from "@/lib/keep-form";
 
 type Category = { id: string; name: string };
 type County = { id: string; name: string };
@@ -23,7 +24,7 @@ export default function RegisterForm({ code, categories, counties }: { code: str
   };
 
   return (
-    <form action={action} className={styles.form} noValidate>
+    <form onSubmit={keepFormSubmit(action)} className={styles.form} noValidate>
       <input type="hidden" name="invite_code" value={code} />
       <input type="hidden" name="logo_url" value={logoUrl} />
       <input type="hidden" name="category_ids" value={JSON.stringify(categoryIds)} />
