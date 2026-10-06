@@ -64,6 +64,8 @@ export default function ProductDetail({ product }: { product: PD }) {
 
   return (
     <div className={styles.layout}>
+      {/* Gallery + buy box share their own block, so the sticky buy box stops at the details below. */}
+      <div className={styles.top}>
       <div className={styles.left}>
         <ProductGallery images={images} name={product.name} index={photoIndex} />
       </div>
@@ -137,6 +139,7 @@ export default function ProductDetail({ product }: { product: PD }) {
           <li><Truck size={16} aria-hidden="true" /> Agree on delivery or pick-up with the seller.</li>
           <li><ShieldCheck size={16} aria-hidden="true" /> Pay on delivery or at the shop when you can.</li>
         </ul>
+      </div>
       </div>
 
       <div className={styles.details}>

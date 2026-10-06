@@ -39,3 +39,6 @@ a.visually-hidden:focus { position: fixed; top: 0.5rem; left: 0.5rem; width: aut
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Product pages on phones: room for the sticky "Order on WhatsApp" bar under the last section. */
+@media (max-width: 859px) { .productPage { padding-bottom: calc(84px + env(safe-area-inset-bottom)); } }

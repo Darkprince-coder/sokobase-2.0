@@ -61,9 +61,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   crumbs.push({ label: product.name });
 
   return (
-    <div className="container" style={{ paddingTop: 8 }}>
-      <Breadcrumbs items={crumbs} />
-      <ProductDetail product={product} />
+    <div className="productPage" style={{ paddingTop: 8 }}>
+      <div className="container">
+        <Breadcrumbs items={crumbs} />
+        <ProductDetail product={product} />
+      </div>
+      {/* ProductSection brings its own container. */}
       {fromShop.length > 0 && <ProductSection title={`More from ${product.business}`} href={`/store/${product.businessSlug}`} products={fromShop} layout="rail" />}
       {similar.length > 0 && <ProductSection title="Similar products" href={product.categorySlug ? `/products?category=${product.categorySlug}` : "/products"} products={similar} layout="rail" />}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(ld) }} />

@@ -13,7 +13,7 @@ export default function FilterBar({ category, subcategory, badge, q, subcategori
   const params = useSearchParams();
   const categories = useCategories();
   const qs = (chips: Record<string, string | undefined>) => {
-    const keep = { q, county: params.get("county") ?? undefined, sort: params.get("sort") ?? undefined, stock: params.get("stock") ?? undefined };
+    const keep = { q, county: params.get("county") ?? undefined, sort: params.get("sort") ?? undefined, stock: params.get("stock") ?? undefined, deals: params.get("deals") ?? undefined };
     const sp = new URLSearchParams(Object.entries({ ...keep, ...chips }).filter(([, v]) => v) as [string, string][]);
     const s = sp.toString();
     return `/products${s ? `?${s}` : ""}`;

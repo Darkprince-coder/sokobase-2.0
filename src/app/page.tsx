@@ -1,4 +1,4 @@
-import { Flame, Sparkles, MessageCircle } from "lucide-react";
+import { Flame, Sparkles, MessageCircle, Star, TrendingUp, LayoutGrid } from "lucide-react";
 import HeroCarousel from "@/components/HeroCarousel";
 import CategorySidebar from "@/components/CategorySidebar";
 import PromoTiles from "@/components/PromoTiles";
@@ -8,25 +8,15 @@ import ProductSection from "@/components/ProductSection";
 import ShopsSection from "@/components/ShopsSection";
 import Button from "@/components/Button";
 import { getHeroSlides } from "@/lib/settings";
-import { getProducts, getShops } from "@/lib/catalog";
+import { getHomeSections } from "@/lib/home";
 import { sellWhatsappLink } from "@/lib/site";
 import styles from "./page.module.css";
 
-// Safety net: server actions revalidate these pages on every change; this catches anything missed.
+// Rebuilt at most every 5 minutes (and whenever a shop changes); the mix rotates daily.
 export const revalidate = 300;
 
 export default async function Home() {
-  const [slides, deals, fresh, recommended, shops] = await Promise.all([
-    getHeroSlides(),
-    getProducts({ badge: "hot", limit: 12 }),
-    getProducts({ badge: "new", limit: 8 }),
-    getProducts({ limit: 24 }),
-    getShops({ limit: 4 }),
-  ]);
-  const offers = deals.length ? deals : await getProducts({ badge: "offer", limit: 12 });
-  // "Browse products" skips anything already shown above, so the page (and its data) has no repeats.
-  const shown = new Set([...offers, ...fresh].map((p) => p.id));
-  const browse = recommended.filter((p) => !shown.has(p.id)).slice(0, 12);
+  const [slides, home] = await Promise.all([getHeroSlides(), getHomeSections()]);
   const sellHref = sellWhatsappLink() ?? "/sell";
 
   return (
@@ -38,10 +28,17 @@ export default async function Home() {
       </div>
       <CategoryScroller />
       <TrustStrip />
-      {offers.length > 0 && <ProductSection title="Hot deals" href="/products?badge=hot" products={offers} layout="rail" icon={<Flame size={20} />} tone="hot" />}
-      {fresh.length > 0 && <ProductSection title="New arrivals" href="/products?badge=new" products={fresh} layout="grid" icon={<Sparkles size={20} />} />}
-      <ShopsSection shops={shops} />
-      {browse.length > 0 && <ProductSection title="Browse products" href="/products" products={browse} layout="grid" />}
+
+      {home.featured.length > 0 && <ProductSection title="Handpicked for you" href="/products" products={home.featured} layout="rail" icon={<Star size={20} />} />}
+      {home.deals.length > 0 && <ProductSection title="Top deals" href="/products?deals=1&sort=discount" products={home.deals} layout="rail" icon={<Flame size={20} />} tone="hot" />}
+      {home.popular.length > 0 && <ProductSection title="Popular this week" href="/products" products={home.popular} layout="rail" icon={<TrendingUp size={20} />} />}
+      <ShopsSection shops={home.shops} />
+      {home.fresh.length > 0 && <ProductSection title="New arrivals" href="/products?sort=newest" products={home.fresh} layout="rail" icon={<Sparkles size={20} />} />}
+      {home.categoryRails.map((r) => (
+        <ProductSection key={r.category.id} title={r.category.name} href={`/products?category=${r.category.slug}`} products={r.products} layout="rail" />
+      ))}
+      {home.explore.length > 0 && <ProductSection title="More to explore" href="/products" products={home.explore} layout="grid" icon={<LayoutGrid size={20} />} />}
+
       <section className={`container ${styles.ctaWrap}`}>
         <div className={styles.cta}>
           <div>

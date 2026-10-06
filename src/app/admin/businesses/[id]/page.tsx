@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { BadgeCheck, BellRing, ExternalLink, MessageCircle } from "lucide-react";
+import { BadgeCheck, BellRing, ExternalLink, MessageCircle, Star } from "lucide-react";
 import { adminDb } from "@/lib/admin";
 import { categoryNames, one, type BusinessCategoriesRel, type Rel } from "@/lib/relations";
 import { formatDate, isPast, nowMs } from "@/lib/dates";
@@ -11,7 +11,7 @@ import { renewalReminderLink } from "@/lib/reminders";
 import { formatPrice } from "@/lib/format";
 import type { PriceType } from "@/lib/types";
 import {
-  cancelSubscription, moderateProduct, renewSubscription, resetOwnerPassword, resolveReport, setBusinessStatus, setSubscriptionEnd, setVerified,
+  cancelSubscription, moderateProduct, renewSubscription, resetOwnerPassword, resolveReport, setBusinessStatus, setFeatured, setSubscriptionEnd, setVerified,
 } from "@/app/admin/actions";
 import ActionForm from "@/components/admin/ActionForm";
 import StatusPill from "@/components/admin/StatusPill";
@@ -30,7 +30,7 @@ export default async function BusinessDetail({ params }: { params: Promise<{ id:
   const { db } = await adminDb();
 
   const { data: b } = await db.from("businesses")
-    .select("id, owner_id, slug, name, description, location, whatsapp, status, verified_at, created_at, products(count), counties(name), business_categories(categories(name))")
+    .select("id, owner_id, slug, name, description, location, whatsapp, status, verified_at, featured_at, created_at, products(count), counties(name), business_categories(categories(name))")
     .eq("id", id).maybeSingle();
   if (!b) notFound();
 
@@ -39,7 +39,7 @@ export default async function BusinessDetail({ params }: { params: Promise<{ id:
     db.from("subscriptions").select("id, status, starts_at, ends_at, payment_note, amount_kes, plans(id, name, product_limit, price_kes)").eq("business_id", id).order("ends_at", { ascending: false }),
     db.from("plans").select("id, name, price_kes, duration_days").eq("active", true).order("sort_order"),
     db.auth.admin.getUserById(b.owner_id),
-    db.from("products").select("id, slug, name, status, in_stock, price, price_type, created_at").eq("business_id", id).order("created_at", { ascending: false }).limit(200),
+    db.from("products").select("id, slug, name, status, in_stock, price, price_type, featured_at, created_at").eq("business_id", id).order("created_at", { ascending: false }).limit(200),
     db.from("reports").select("id, reason, details, contact, status, created_at, product_id, products(name)").eq("business_id", id).order("created_at", { ascending: false }).limit(20),
     db.from("admin_audit_log").select("id, action, details, created_at").eq("target_id", id).order("created_at", { ascending: false }).limit(15),
     db.from("order_clicks").select("id", { count: "exact", head: true }).eq("business_id", id).gte("created_at", since30),
@@ -95,6 +95,11 @@ export default async function BusinessDetail({ params }: { params: Promise<{ id:
               {b.verified_at
                 ? <ConfirmSubmit label="Remove verified badge" tone="neutral" />
                 : <Button type="submit" size="sm" variant="outline" icon={<BadgeCheck size={15} />}>Mark as verified</Button>}
+            </form>
+            <form action={setFeatured}>
+              <input type="hidden" name="id" value={b.id} /><input type="hidden" name="kind" value="business" />
+              <input type="hidden" name="business_id" value={b.id} /><input type="hidden" name="on" value={b.featured_at ? "0" : "1"} />
+              <Button type="submit" size="sm" variant={b.featured_at ? "soft" : "outline"} icon={<Star size={15} />}>{b.featured_at ? "Featured on home" : "Feature on home"}</Button>
             </form>
             <form action={setBusinessStatus}>
               <input type="hidden" name="id" value={b.id} />
@@ -210,7 +215,7 @@ export default async function BusinessDetail({ params }: { params: Promise<{ id:
         {(products ?? []).length === 0 ? <p className={styles.empty}>No products yet.</p> : (
           <div className={styles.tableWrap}>
             <table className={styles.table}>
-              <thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead>
+              <thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th>Home page</th><th></th></tr></thead>
               <tbody>
                 {(products ?? []).map((p) => (
                   <tr key={p.id}>
@@ -218,6 +223,13 @@ export default async function BusinessDetail({ params }: { params: Promise<{ id:
                     <td className={styles.mono}>{formatPrice(p.price == null ? null : Number(p.price), p.price_type as PriceType)}</td>
                     <td>{p.in_stock ? "In stock" : <span className={styles.muted}>Out</span>}</td>
                     <td><StatusPill kind={p.status as "draft" | "published"} /></td>
+                    <td>
+                      <form action={setFeatured}>
+                        <input type="hidden" name="id" value={p.id} /><input type="hidden" name="kind" value="product" />
+                        <input type="hidden" name="business_id" value={b.id} /><input type="hidden" name="on" value={p.featured_at ? "0" : "1"} />
+                        <Button type="submit" size="sm" variant={p.featured_at ? "soft" : "ghost"} icon={<Star size={14} fill={p.featured_at ? "currentColor" : "none"} />}>{p.featured_at ? "Featured" : "Feature"}</Button>
+                      </form>
+                    </td>
                     <td>
                       <form action={moderateProduct}>
                         <input type="hidden" name="id" value={p.id} />

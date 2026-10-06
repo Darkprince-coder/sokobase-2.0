@@ -36,7 +36,7 @@ export default function MenuDrawer() {
           <nav aria-label="Main" className={styles.quick}>
             <Link href="/"><Home size={18} aria-hidden="true" />Home</Link>
             <Link href="/products"><LayoutGrid size={18} aria-hidden="true" />All products</Link>
-            <Link href="/products?badge=hot" className={styles.hot}><Flame size={18} aria-hidden="true" />Hot deals</Link>
+            <Link href="/products?deals=1&sort=discount" className={styles.hot}><Flame size={18} aria-hidden="true" />Deals</Link>
             <Link href="/stores"><Store size={18} aria-hidden="true" />Shops</Link>
             <Link href="/saved"><Heart size={18} aria-hidden="true" />Saved items</Link>
           </nav>

@@ -16,7 +16,7 @@ export default function Footer() {
         <nav aria-label="Shop" className={styles.col}>
           <h3>Shop</h3>
           <Link href="/products">Browse products</Link>
-          <Link href="/products?badge=hot">Hot deals</Link>
+          <Link href="/products?deals=1&sort=discount">Deals</Link>
           <Link href="/stores">Shops</Link>
           <Link href="/saved">Saved items</Link>
         </nav>

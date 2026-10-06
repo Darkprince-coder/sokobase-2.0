@@ -38,6 +38,8 @@ for (const size of sizes) {
     await page.goto(base + p, { waitUntil: "networkidle" }).catch(() => {});
     await page.waitForTimeout(600);
     // Optional: click something first (e.g. open a menu): SCREENS_CLICK="button[aria-label='Open menu']"
+    // Optional: scroll down first (e.g. to check sticky elements): SCREENS_SCROLL=600
+    if (process.env.SCREENS_SCROLL) { await page.evaluate((y) => window.scrollTo(0, y), Number(process.env.SCREENS_SCROLL)); await page.waitForTimeout(400); }
     // Several clicks can be chained with "||".
     for (const sel of (process.env.SCREENS_CLICK ?? "").split("||").filter(Boolean)) {
       await page.click(sel.trim(), { timeout: 5000 }).catch((e) => console.log("click failed:", e.message.split("\n")[0]));

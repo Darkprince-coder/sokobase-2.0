@@ -39,8 +39,8 @@ export default function Header() {
         <div className={`container ${styles.mobileSearch}`}><SearchBar /></div>
         <nav className={styles.catnav} aria-label="Popular categories">
           <div className={`container ${styles.catInner}`}>
-            <Link href="/products?badge=hot" className={styles.hot}>Hot deals</Link>
-            <Link href="/products?badge=new">New arrivals</Link>
+            <Link href="/products?deals=1&sort=discount" className={styles.hot}>Deals</Link>
+            <Link href="/products?sort=newest">New arrivals</Link>
             {categories.slice(0, 7).map((c) => (
               <Link key={c.slug} href={`/products?category=${c.slug}`}>{c.name}</Link>
             ))}

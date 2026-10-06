@@ -13,13 +13,14 @@ import styles from "./products.module.css";
 
 const PAGE_SIZE = 24;
 const MAX_PAGES = 20;
-type Search = { q?: string; category?: string; subcategory?: string; badge?: string; county?: string; sort?: string; stock?: string; page?: string };
+type Search = { q?: string; category?: string; subcategory?: string; badge?: string; county?: string; sort?: string; stock?: string; deals?: string; page?: string };
 
 const SORTS: { value: ProductSort; label: string }[] = [
   { value: "relevance", label: "Best match" },
   { value: "newest", label: "Newest" },
   { value: "price_asc", label: "Price: low to high" },
   { value: "price_desc", label: "Price: high to low" },
+  { value: "discount", label: "Biggest discount" },
 ];
 
 async function categoryName(slug?: string) {
@@ -33,9 +34,9 @@ const badgeTitle = (badge?: string) => (badge === "hot" ? "Hot deals" : badge ==
 export async function generateMetadata({ searchParams }: { searchParams: Promise<Search> }): Promise<Metadata> {
   const sp = await searchParams;
   const catName = await categoryName(sp.category);
-  const title = sp.q ? `Search: ${sp.q}` : catName ?? badgeTitle(sp.badge) ?? "All products";
+  const title = sp.q ? `Search: ${sp.q}` : sp.deals === "1" ? "Top deals" : catName ?? badgeTitle(sp.badge) ?? "All products";
   // Category pages are indexable landing pages; search results and filtered/paged views are not.
-  const indexable = !sp.q && !sp.county && !sp.sort && !sp.stock && !sp.page && !sp.subcategory;
+  const indexable = !sp.q && !sp.county && !sp.sort && !sp.stock && !sp.page && !sp.subcategory && !sp.deals;
   return {
     title,
     description: catName ? `Shop ${catName.toLowerCase()} from verified businesses across Kenya and order directly on WhatsApp.` : undefined,
@@ -49,16 +50,17 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const q = sp.q?.trim().slice(0, 80) || undefined;
   const page = Math.min(Math.max(Number.parseInt(sp.page ?? "1", 10) || 1, 1), MAX_PAGES);
   const sort = SORTS.some((s) => s.value === sp.sort) ? (sp.sort as ProductSort) : undefined;
-  const sortOptions = q ? SORTS : SORTS.filter((s) => s.value !== "relevance");
+  const deals = sp.deals === "1";
+  const sortOptions = SORTS.filter((s) => (q || s.value !== "relevance") && (deals || s.value !== "discount"));
 
   const [{ products, total }, subcategories, catName, counties, shops] = await Promise.all([
-    searchProducts({ q, category: sp.category, subcategory: sp.subcategory, badge: sp.badge, county: sp.county, inStock: sp.stock === "1", sort, limit: PAGE_SIZE * page }),
+    searchProducts({ q, category: sp.category, subcategory: sp.subcategory, badge: sp.badge, county: sp.county, inStock: sp.stock === "1", deals, sort, limit: PAGE_SIZE * page }),
     sp.category ? getSubcategories(sp.category) : Promise.resolve([]),
     categoryName(sp.category),
     getCounties(),
     q && page === 1 ? searchShops(q, 4) : Promise.resolve([]),
   ]);
-  const title = q ? `Results for "${q}"` : catName ?? badgeTitle(sp.badge) ?? "All products";
+  const title = q ? `Results for "${q}"` : deals ? (catName ? `${catName} deals` : "Top deals") : catName ?? badgeTitle(sp.badge) ?? "All products";
   const nextParams = new URLSearchParams(Object.entries({ ...sp, page: String(page + 1) }).filter(([, v]) => v) as [string, string][]);
   const filtered = !!(sp.county || sp.stock || sp.category || sp.badge || sp.subcategory);
   const crumbs: Crumb[] = [{ label: "Products", href: (catName || q || sp.badge) ? "/products" : undefined }];

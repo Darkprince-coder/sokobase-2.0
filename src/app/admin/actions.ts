@@ -328,3 +328,20 @@ export async function resolveReport(fd: FormData) {
   revalidatePath("/admin/reports");
   revalidatePath("/admin");
 }
+
+// ---------- Home page curation ----------
+// "Feature on home": products appear in "Handpicked for you"; shops lead "Featured shops".
+export async function setFeatured(fd: FormData) {
+  const { db, user } = await adminDb();
+  const id = uuid.safeParse(fd.get("id"));
+  const kind = z.enum(["product", "business"]).safeParse(fd.get("kind"));
+  if (!id.success || !kind.success) return;
+  const on = fd.get("on") === "1";
+  const table = kind.data === "product" ? "products" : "businesses";
+  const { data, error } = await db.from(table).update({ featured_at: on ? new Date().toISOString() : null }).eq("id", id.data).select("id").maybeSingle();
+  if (error || !data) return;
+  await audit(db, user.id, on ? `${kind.data}.feature` : `${kind.data}.unfeature`, { type: kind.data, id: id.data });
+  const businessId = z.string().uuid().safeParse(fd.get("business_id"));
+  if (businessId.success) revalidatePath(`/admin/businesses/${businessId.data}`);
+  refreshPublic();
+}

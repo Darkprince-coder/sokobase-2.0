@@ -93,10 +93,10 @@ export async function getProducts(opts: { q?: string; category?: string; subcate
   return rows<ProductRow>(data).map(toProduct);
 }
 
-export type ProductSort = "relevance" | "newest" | "price_asc" | "price_desc";
+export type ProductSort = "relevance" | "newest" | "price_asc" | "price_desc" | "discount";
 export type ProductQuery = {
   q?: string; category?: string; subcategory?: string; county?: string; badge?: string;
-  inStock?: boolean; sort?: ProductSort; limit?: number; offset?: number;
+  inStock?: boolean; deals?: boolean; sort?: ProductSort; limit?: number; offset?: number;
 };
 
 const idForSlug = async (table: "categories" | "counties", slug?: string) => {
@@ -123,6 +123,7 @@ export async function searchProducts(opts: ProductQuery): Promise<{ products: Pr
   const { data, error } = await db.rpc("search_products", {
     p_q: opts.q?.trim() || null, p_category_id: categoryId, p_subcategory_id: subcategoryId, p_county_id: countyId,
     p_badge: badge, p_in_stock: !!opts.inStock, p_sort: sort, p_limit: opts.limit ?? 24, p_offset: opts.offset ?? 0,
+    ...(opts.deals ? { p_deals: true } : {}), // p_deals arrives with migration 0013; only sent when used
   });
   if (error) {
     const products = await getProducts({ q: opts.q, category: opts.category, subcategory: opts.subcategory, badge: opts.badge, limit: opts.limit });
