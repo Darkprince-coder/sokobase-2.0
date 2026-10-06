@@ -33,9 +33,28 @@ describe("buildHomeFeed", () => {
     ];
     const feed = buildHomeFeed({ candidates, categories: cats, seed: "x", now: NOW });
     const shopOf = (id: string) => candidates.find((c) => c.id === id)!.shopId;
-    for (const section of [feed.deals, feed.fresh, feed.explore]) {
+    for (const section of [feed.deals, feed.fresh]) {
       expect(section.filter((id) => shopOf(id) === "big").length).toBeLessThanOrEqual(2);
     }
+  });
+
+  it("caps shops in More to explore once there are many shops", () => {
+    const candidates = [
+      ...Array.from({ length: 20 }, () => item({ shopId: "big" })),
+      ...Array.from({ length: 14 }, (_, i) => item({ shopId: `s${i}` })),
+    ];
+    const feed = buildHomeFeed({ candidates, categories: [], seed: "x", now: NOW });
+    expect(feed.explore.filter((id) => candidates.find((c) => c.id === id)!.shopId === "big").length).toBeLessThanOrEqual(2);
+  });
+
+  it("doesn't hide products when there are only a few shops", () => {
+    const candidates = [...Array.from({ length: 5 }, () => item({ shopId: "only" })), item({ shopId: "other" })];
+    expect(buildHomeFeed({ candidates, categories: [], seed: "x", now: NOW }).explore).toHaveLength(6);
+  });
+
+  it("shows every featured product, even from one shop", () => {
+    const candidates = Array.from({ length: 4 }, () => item({ shopId: "one", featured: true }));
+    expect(buildHomeFeed({ candidates, categories: [], seed: "x", now: NOW }).featured).toHaveLength(4);
   });
 
   it("shows each product at most once on the page", () => {

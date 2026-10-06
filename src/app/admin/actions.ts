@@ -5,6 +5,8 @@ import { adminDb, audit, done, fail, refreshPublic, slugify, type ActionState } 
 import { generateInviteCode } from "@/lib/invites";
 import { site } from "@/lib/site";
 import { isOwnImageUrl } from "@/lib/cloudinary";
+import { deleteFolderImages, deleteImages } from "@/lib/cloudinary-admin";
+import { redirect } from "next/navigation";
 
 const uuid = z.string().uuid();
 const firstError = (e: z.ZodError) => e.issues[0]?.message ?? "Check the form and try again.";
@@ -344,4 +346,49 @@ export async function setFeatured(fd: FormData) {
   const businessId = z.string().uuid().safeParse(fd.get("business_id"));
   if (businessId.success) revalidatePath(`/admin/businesses/${businessId.data}`);
   refreshPublic();
+}
+
+// ---------- Permanent deletion ----------
+// Removes a shop for good: the business and everything that belongs to it (products, options,
+// subscriptions, categories, reports, order statistics), the owner's sign-in account, and its
+// photos on Cloudinary. Cannot be undone, so the admin must type the shop's name to confirm.
+// Suspending is the reversible alternative.
+export async function deleteBusiness(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const { db, user } = await adminDb();
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return fail("Business not found.");
+  const { data: b } = await db.from("businesses").select("id, name, slug, owner_id, logo_url, cover_url").eq("id", id.data).maybeSingle();
+  if (!b) return fail("Business not found.");
+  const typed = String(fd.get("confirm_name") ?? "").trim().toLowerCase();
+  if (typed !== b.name.trim().toLowerCase()) return { error: `Type the shop name exactly ("${b.name}") to confirm.`, field: "confirm_name" };
+
+  // Collect photo URLs before the rows disappear.
+  const [{ data: products }, { count: productCount }] = await Promise.all([
+    db.from("products").select("id, images").eq("business_id", b.id),
+    db.from("products").select("id", { count: "exact", head: true }).eq("business_id", b.id),
+  ]);
+  const productIds = (products ?? []).map((p) => p.id as string);
+  const { data: variants } = productIds.length
+    ? await db.from("product_variants").select("image_url").in("product_id", productIds)
+    : { data: [] as { image_url: string | null }[] };
+  const urls = [b.logo_url, b.cover_url, ...(products ?? []).flatMap((p) => (p.images as string[]) ?? []), ...(variants ?? []).map((v) => v.image_url)]
+    .filter((u): u is string => typeof u === "string" && u.length > 0);
+
+  // Record first: the audit row keeps the name after the business is gone.
+  await audit(db, user.id, "business.delete", { type: "business", id: b.id }, { name: b.name, slug: b.slug, products: productCount ?? 0, photos: urls.length });
+
+  // Deleting the business cascades to products, variants, subscriptions, categories, reports and clicks.
+  const { error } = await db.from("businesses").delete().eq("id", b.id);
+  if (error) return fail("Could not delete the shop. Nothing was removed.");
+  // The owner's login (and profile, via cascade). Their invite rows stay, unlinked, as history.
+  await db.auth.admin.deleteUser(b.owner_id).catch(() => null);
+
+  // Free Cloudinary storage (best effort; never blocks).
+  await deleteImages(urls);
+  await deleteFolderImages(`sokobase/shops/${b.id}/`);
+
+  refreshPublic();
+  revalidatePath("/admin/businesses");
+  revalidatePath("/admin");
+  redirect(`/admin/businesses?deleted=${encodeURIComponent(b.name)}`);
 }

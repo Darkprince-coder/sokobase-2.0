@@ -61,14 +61,15 @@ export function buildHomeFeed(input: { candidates: Candidate[]; categories: Cate
   const used = new Set<string>();
   // Shuffle first so ties (and equal-score items) rotate daily; stable sorts keep that order.
   const pool = shuffle(input.candidates, rand);
-  const take = (list: Candidate[], limit = RAIL, min = MIN_RAIL) => {
-    const picked = diversify(list.filter((c) => !used.has(c.id))).slice(0, limit);
+  const take = (list: Candidate[], limit = RAIL, min = MIN_RAIL, perShop = PER_SHOP) => {
+    const picked = diversify(list.filter((c) => !used.has(c.id)), perShop).slice(0, limit);
     if (picked.length < min) return [];
     picked.forEach((c) => used.add(c.id));
     return picked.map((c) => c.id);
   };
 
-  const featured = take(pool.filter((c) => c.featured), RAIL, 1);
+  // Admin picks are deliberate, so the per-shop cap doesn't apply to them.
+  const featured = take(pool.filter((c) => c.featured), RAIL, 1, RAIL);
   const deals = take(pool.filter((c) => discount(c) >= DEAL_MIN).sort((a, b) => discount(b) - discount(a)));
   const popular = take(pool.filter((c) => c.clicks > 0).sort((a, b) => b.clicks - a.clicks));
   // Only genuinely new products; an old catalogue simply has no "New arrivals" row.
@@ -84,7 +85,10 @@ export function buildHomeFeed(input: { candidates: Candidate[]; categories: Cate
     .map((category) => ({ category, ids: take(pool.filter((c) => c.categoryId === category.id)) }))
     .filter((r) => r.ids.length > 0);
 
-  // Everything else, still diverse; shows even a tiny catalogue.
-  const explore = take(pool, 24, 1);
+  // Everything else. With many shops: at most PER_SHOP each. With only a few shops the cap
+  // loosens so their products aren't hidden from the home page.
+  const EXPLORE = 24;
+  const shopsLeft = new Set(pool.filter((c) => !used.has(c.id)).map((c) => c.shopId)).size;
+  const explore = take(pool, EXPLORE, 1, shopsLeft >= EXPLORE / PER_SHOP ? PER_SHOP : Math.ceil(EXPLORE / Math.max(shopsLeft, 1)));
   return { featured, deals, popular, fresh, categoryRails, explore };
 }

@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Businesses" };
 const FILTERS = ["all", "active", "expired", "suspended"] as const;
 type Filter = (typeof FILTERS)[number];
 
-export default async function BusinessesPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string }> }) {
+export default async function BusinessesPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string; deleted?: string }> }) {
   const sp = await searchParams;
   const filter: Filter = (FILTERS as readonly string[]).includes(sp.status ?? "") ? (sp.status as Filter) : "all";
   const term = (sp.q ?? "").replace(/[%,()*\\]/g, "").trim().slice(0, 60);
@@ -45,6 +45,7 @@ export default async function BusinessesPage({ searchParams }: { searchParams: P
   return (
     <>
       <header className={styles.head}><h1>Businesses</h1><p className={styles.sub}>Every shop on SokoBase. New shops appear here after they register with an invite.</p></header>
+      {sp.deleted && <p className={styles.msgOk} role="status" style={{ marginBottom: 14 }}>&ldquo;{sp.deleted.slice(0, 80)}&rdquo; and all its data were deleted.</p>}
       <section className={styles.panel}>
         <div className={styles.filters}>
           {FILTERS.map((f) => <Link key={f} href={link(f)} className={`${styles.filter} ${f === filter ? styles.filterOn : ""}`}>{f[0].toUpperCase() + f.slice(1)}</Link>)}

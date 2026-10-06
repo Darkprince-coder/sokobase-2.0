@@ -139,3 +139,15 @@ describe("invite codes", () => {
     }
   });
 });
+
+describe("Cloudinary public ids (for deleting a shop's images)", () => {
+  it("extracts the id from stored and transformed URLs, only for our account", async () => {
+    const { publicIdFromUrl } = await import("@/lib/cloudinary-admin");
+    expect(publicIdFromUrl("https://res.cloudinary.com/soko/image/upload/v1712345678/sokobase/shops/abc/photo.jpg", "soko")).toBe("sokobase/shops/abc/photo");
+    expect(publicIdFromUrl("https://res.cloudinary.com/soko/image/upload/v1/x.png", "soko")).toBe("x");
+    expect(publicIdFromUrl("https://res.cloudinary.com/soko/image/upload/c_fill,w_400/v9/a/b.webp", "soko")).toBe("a/b");
+    expect(publicIdFromUrl("https://res.cloudinary.com/soko/image/upload/c_fill,w_400/plain.jpg", "soko")).toBe("plain");
+    expect(publicIdFromUrl("https://res.cloudinary.com/other/image/upload/v1/x.png", "soko")).toBeNull();
+    expect(publicIdFromUrl("https://evil.example/x.png", "soko")).toBeNull();
+  });
+});

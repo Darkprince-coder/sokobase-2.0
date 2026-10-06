@@ -99,3 +99,7 @@
 .inlineEdit[open] summary { margin-bottom: 8px; }
 .remind { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--color-primary); text-decoration: none; border: 1px solid var(--line); border-radius: var(--radius-pill); padding: 6px 12px; white-space: nowrap; }
 .remind:hover { border-color: var(--color-primary); }
+.danger { border-color: color-mix(in srgb, var(--color-danger) 40%, var(--line)); }
+.danger h2 { color: var(--color-danger); }
+.dangerForm button[type="submit"] { color: var(--color-danger); border-color: var(--color-danger); }
+.dangerForm button[type="submit"]:hover { background: var(--color-danger); color: #fff; }

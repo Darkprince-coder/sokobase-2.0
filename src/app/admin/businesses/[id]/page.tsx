@@ -11,7 +11,7 @@ import { renewalReminderLink } from "@/lib/reminders";
 import { formatPrice } from "@/lib/format";
 import type { PriceType } from "@/lib/types";
 import {
-  cancelSubscription, moderateProduct, renewSubscription, resetOwnerPassword, resolveReport, setBusinessStatus, setFeatured, setSubscriptionEnd, setVerified,
+  cancelSubscription, deleteBusiness, moderateProduct, renewSubscription, resetOwnerPassword, resolveReport, setBusinessStatus, setFeatured, setSubscriptionEnd, setVerified,
 } from "@/app/admin/actions";
 import ActionForm from "@/components/admin/ActionForm";
 import StatusPill from "@/components/admin/StatusPill";
@@ -271,6 +271,18 @@ export default async function BusinessDetail({ params }: { params: Promise<{ id:
           </ActionForm>
         </section>
       </div>
+
+      <section className={`${styles.panel} ${styles.danger}`}>
+        <h2>Danger zone: delete this shop</h2>
+        <p className={styles.sub} style={{ marginBottom: 12 }}>
+          Permanently removes <strong>{b.name}</strong>: its {one(b.products as Rel<{ count: number }>)?.count ?? 0} product(s), photos, options, subscription and payment history,
+          reports, order statistics, and the owner&apos;s sign-in account. This cannot be undone. To hide the shop temporarily, use &ldquo;Suspend shop&rdquo; above instead.
+        </p>
+        <ActionForm action={deleteBusiness} submitLabel="Delete shop permanently" variant="outline" className={styles.dangerForm}>
+          <input type="hidden" name="id" value={b.id} />
+          <label className={styles.field}><span>Type <strong>{b.name}</strong> to confirm</span><input name="confirm_name" autoComplete="off" required /></label>
+        </ActionForm>
+      </section>
     </>
   );
 }
