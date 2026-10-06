@@ -9,10 +9,10 @@ import styles from "@/components/dashboard/dash.module.css";
 
 export const metadata: Metadata = { title: "Products" };
 
-export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ error?: string; saved?: string }> }) {
   const { supabase, business } = await requireBusiness();
   if (!business) return null;
-  const { error } = await searchParams;
+  const { error, saved } = await searchParams;
 
   const [usage, { data }] = await Promise.all([
     getPlanUsage(supabase, business.id),
@@ -30,6 +30,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       </header>
 
       {error && <p className={styles.msgErr} role="alert" style={{ marginBottom: 14 }}>{error.slice(0, 200)}</p>}
+      {saved && <p className={styles.msgOk} role="status" style={{ marginBottom: 14 }}>{saved === "draft" ? "Saved as a draft. It is hidden until you publish it." : "Published! Customers can now see your product."}</p>}
       <UsageBar count={usage.count} limit={usage.limit} />
       {remaining !== null && remaining <= 3 && remaining > 0 && (
         <p className={styles.sub} style={{ marginTop: -12, marginBottom: 16 }}>Only {remaining} product slot{remaining === 1 ? "" : "s"} left on your plan.</p>

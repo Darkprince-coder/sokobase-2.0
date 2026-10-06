@@ -2,18 +2,21 @@ import { cache } from "react";
 import { createPublicClient } from "./supabase/public";
 import { categoryNames, one, type BusinessCategoriesRel, type Rel } from "./relations";
 import type { PriceType, Product, ProductBadge } from "./types";
+import type { OptionGroup, PublicVariant } from "./variants";
 
-export type Variant = { id: string; label: string; price: number | null; oldPrice: number | null; inStock: boolean };
 export type ProductDetail = Product & {
   description: string | null;
   images: string[];
   specs: Record<string, string>;
-  variants: Variant[];
+  options: OptionGroup[];
+  variants: PublicVariant[];
   categoryId: string | null;
   categorySlug: string | null;
   subcategory: string | null;
   subcategorySlug: string | null;
   businessSlug: string;
+  businessLogo: string | null;
+  businessVerified: boolean;
 };
 export type Shop = {
   id: string; slug: string; name: string; location: string; county: string | null; countySlug: string | null;
@@ -35,8 +38,10 @@ type ProductRow = {
   businesses: Rel<{ id: string; name: string; slug: string; location: string; whatsapp: string }>;
   categories: Rel<NameRow & { slug?: string }>;
 };
-type ProductDetailRow = ProductRow & {
+type ProductDetailRow = Omit<ProductRow, "businesses"> & {
   description: string | null; specs: Record<string, string> | null; category_id: string | null; subcategories: Rel<NameRow & { slug: string }>;
+  options: OptionGroup[] | null;
+  businesses: Rel<{ id: string; name: string; slug: string; location: string; whatsapp: string; logo_url: string | null; verified_at: string | null }>;
 };
 type ShopRow = {
   id: string; slug: string; name: string; location: string; logo_url: string | null; verified_at?: string | null;
@@ -155,20 +160,28 @@ export async function getSubcategories(categorySlug: string): Promise<{ id: stri
 // cache(): generateMetadata and the page both ask for the same product in one request.
 export const getProductBySlug = cache(async (slug: string): Promise<ProductDetail | null> => {
   const db = createPublicClient();
-  const { data } = await db.from("products")
-    .select("id, slug, name, description, price, old_price, price_type, in_stock, badge, images, specs, category_id, businesses(id, name, slug, location, whatsapp), categories(name, slug), subcategories(name, slug)")
-    .eq("slug", slug).eq("status", "published").maybeSingle();
-  const row = data as ProductDetailRow | null;
+  // options / attributes / image_url arrive with migration 0011; until it is applied, fall back.
+  const full = "id, slug, name, description, price, old_price, price_type, in_stock, badge, images, specs, options, category_id, businesses(id, name, slug, location, whatsapp, logo_url, verified_at), categories(name, slug), subcategories(name, slug)";
+  let res = await db.from("products").select(full).eq("slug", slug).eq("status", "published").maybeSingle();
+  if (res.error?.code === "42703") res = await db.from("products").select(full.replace(" options,", "")).eq("slug", slug).eq("status", "published").maybeSingle();
+  const row = res.data as ProductDetailRow | null;
   if (!row) return null;
-  const { data: variants } = await db.from("product_variants").select("id, label, price, old_price, in_stock").eq("product_id", row.id).order("sort_order");
+  const variantQuery = (cols: string) => db.from("product_variants").select(cols).eq("product_id", row.id).order("sort_order");
+  let vres = await variantQuery("id, label, price, old_price, in_stock, attributes, image_url");
+  if (vres.error?.code === "42703") vres = await variantQuery("id, label, price, old_price, in_stock");
+  const variants = vres.data as unknown as { id: string; label: string; price: number | null; old_price: number | null; in_stock: boolean; attributes?: Record<string, string>; image_url?: string | null }[] | null;
   const biz = one(row.businesses);
   const cat = one(row.categories);
   const sub = one(row.subcategories);
   return {
-    ...toProduct(row), description: row.description ?? null, images: row.images ?? [],
-    specs: row.specs ?? {}, categoryId: row.category_id,
+    ...toProduct(row as unknown as ProductRow), description: row.description ?? null, images: row.images ?? [],
+    specs: row.specs ?? {}, categoryId: row.category_id, options: Array.isArray(row.options) ? row.options : [],
     categorySlug: cat?.slug ?? null, subcategory: sub?.name ?? null, subcategorySlug: sub?.slug ?? null, businessSlug: biz?.slug ?? "",
-    variants: (variants ?? []).map((v) => ({ id: v.id, label: v.label, price: v.price == null ? null : Number(v.price), oldPrice: v.old_price ? Number(v.old_price) : null, inStock: v.in_stock })),
+    businessLogo: biz?.logo_url ?? null, businessVerified: !!biz?.verified_at,
+    variants: (variants ?? []).map((v) => ({
+      id: v.id, label: v.label, price: v.price == null ? null : Number(v.price), oldPrice: v.old_price ? Number(v.old_price) : null,
+      inStock: v.in_stock, attributes: (v.attributes ?? {}) as Record<string, string>, imageUrl: v.image_url ?? null,
+    })),
   };
 });
 

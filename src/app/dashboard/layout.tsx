@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import Logo from "@/components/Logo";
 import DashNav from "@/components/dashboard/DashNav";
+import DashTabBar from "@/components/dashboard/DashTabBar";
 import { requireBusiness } from "@/lib/auth";
 import { getPlanUsage } from "@/lib/dashboard";
 import { daysLeft, formatDate, isPast } from "@/lib/dates";
@@ -25,7 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
         <DashNav />
         <div className={styles.sideFoot}>
-          <Link href="/">View site</Link>
+          {business ? <a href={`${site.url}/store/${business.slug}`} target="_blank" rel="noopener noreferrer">View my shop</a> : <a href={site.url}>View site</a>}
           <form action={signOut}><button type="submit">Sign out</button></form>
         </div>
       </aside>
@@ -33,6 +33,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {business && usage && banner(usage, business.name)}
         {children}
       </div>
+      {business && <DashTabBar />}
     </div>
   );
 }

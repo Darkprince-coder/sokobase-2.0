@@ -18,10 +18,8 @@ export default async function NewProductPage() {
 
   return (
     <>
-      <header className={styles.head}><h1>Add product</h1></header>
-      <section className={styles.panel}>
-        <ProductForm categories={categories ?? []} subcategories={subcategories ?? []} remaining={remaining} />
-      </section>
+      <header className={styles.head}><div><h1>Add a product</h1><p className={styles.sub}>Takes about a minute. Only photos, a name and a price are needed.</p></div></header>
+      <ProductForm categories={categories ?? []} subcategories={subcategories ?? []} remaining={remaining} />
     </>
   );
 }

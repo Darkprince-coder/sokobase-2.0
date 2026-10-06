@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { normalizeKePhone } from "@/lib/phone";
 import { slugify } from "@/lib/slug";
 import { isOwnImageUrl } from "@/lib/cloudinary";
+import { buildProductPayload } from "@/lib/product-input";
 
 const fields = (fd: FormData) => Object.fromEntries(fd.entries());
 const firstError = (e: z.ZodError) => e.issues[0]?.message ?? "Check the form and try again.";
@@ -57,114 +58,65 @@ export async function updateProfile(_prev: ActionState, fd: FormData): Promise<A
 }
 
 // ---------- Products ----------
-const variantRowSchema = z.object({
-  id: z.string().optional(), label: z.string().trim().min(1).max(40),
-  price: z.string().optional().default(""), oldPrice: z.string().optional().default(""), inStock: z.boolean().optional().default(true),
-});
-
-const productSchema = z.object({
-  id: z.string().uuid().optional().or(z.literal("")),
-  name: z.string().trim().min(2, "Product name is too short").max(120),
-  description: z.string().trim().max(4000).optional().default(""),
-  category_id: z.string().uuid().optional().or(z.literal("")),
-  subcategory_id: z.string().uuid().optional().or(z.literal("")),
-  price_type: z.enum(["fixed", "from", "contact"]),
-  price: z.string().optional().default(""),
-  old_price: z.string().optional().default(""),
-  badge: z.enum(["hot", "offer", "new", ""]).optional().default(""),
-  images: z.string().optional().default("[]"),
-  specs: z.string().optional().default(""),
-  variants: z.string().optional().default("[]"),
-});
-
-function parseSpecs(text: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const line of text.split("\n")) {
-    const idx = line.indexOf(":");
-    if (idx < 1) continue;
-    const key = line.slice(0, idx).trim().slice(0, 60);
-    const value = line.slice(idx + 1).trim().slice(0, 200);
-    if (key && value) out[key] = value;
+const jsonArray = <T,>(raw: FormDataEntryValue | null, schema: z.ZodType<T>, fallback: T): T => {
+  try {
+    const r = schema.safeParse(JSON.parse(String(raw ?? "")));
+    return r.success ? r.data : fallback;
+  } catch {
+    return fallback;
   }
-  return out;
-}
-
-function parseMoney(raw: string): number | null {
-  const t = raw.trim();
-  if (!t) return null;
-  const n = Number(t);
-  return Number.isNaN(n) || n < 0 ? null : Math.round(n * 100) / 100;
-}
+};
+const comboSchema = z.object({
+  attributes: z.record(z.string().max(30), z.string().max(30)),
+  price: z.union([z.number(), z.string(), z.null()]).transform((v) => (v === "" || v == null ? null : Number(v))),
+  oldPrice: z.union([z.number(), z.string(), z.null()]).transform((v) => (v === "" || v == null ? null : Number(v))),
+  inStock: z.boolean(),
+  imageUrl: z.string().max(500).nullable(),
+});
 
 export async function saveProduct(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const { db, business } = await bizDb();
-  const parsed = productSchema.safeParse(fields(fd));
-  if (!parsed.success) return fail(firstError(parsed.error));
-  const v = parsed.data;
+  const id = z.string().uuid().safeParse(fd.get("id")).data ?? null;
 
-  if (v.subcategory_id && !v.category_id) return fail("Choose a category before choosing a subcategory.");
-  if (v.subcategory_id) {
-    const { data: sub } = await db.from("subcategories").select("category_id").eq("id", v.subcategory_id).maybeSingle();
-    if (!sub || sub.category_id !== v.category_id) return fail("That subcategory doesn't belong to the chosen category.");
+  const result = buildProductPayload({
+    name: String(fd.get("name") ?? ""),
+    description: String(fd.get("description") ?? ""),
+    categoryId: String(fd.get("category_id") ?? ""),
+    subcategoryId: String(fd.get("subcategory_id") ?? ""),
+    badge: String(fd.get("badge") ?? ""),
+    images: jsonArray(fd.get("images"), z.array(z.string()).max(20), []),
+    price: String(fd.get("price") ?? ""),
+    oldPrice: String(fd.get("old_price") ?? ""),
+    priceOnRequest: fd.get("price_on_request") === "1",
+    inStock: fd.get("in_stock") !== "0",
+    publish: fd.get("intent") !== "draft",
+    specs: jsonArray(fd.get("specs"), z.array(z.object({ label: z.string().max(200), value: z.string().max(400) })).max(40), []),
+    options: jsonArray(fd.get("options"), z.array(z.object({ name: z.string().max(60), values: z.array(z.string().max(60)).max(40) })).max(4), []),
+    combos: jsonArray(fd.get("combos"), z.array(comboSchema).max(200), []),
+    samePrice: fd.get("same_price") !== "0",
+  }, isOwnImageUrl);
+  if (!result.ok) return { error: result.error, field: result.field };
+  const { fields, variants } = result.payload;
+
+  if (fields.subcategory_id) {
+    const { data: sub } = await db.from("subcategories").select("category_id").eq("id", fields.subcategory_id).maybeSingle();
+    if (!sub || sub.category_id !== fields.category_id) return { error: "That subcategory doesn't belong to the chosen category.", field: "category" };
   }
 
-  let images: string[] = [];
-  try { images = JSON.parse(v.images).filter((u: unknown) => typeof u === "string" && isOwnImageUrl(u)).slice(0, 8); } catch {}
-
-  let variantRows: z.infer<typeof variantRowSchema>[] = [];
-  try {
-    const raw = JSON.parse(v.variants);
-    const check = z.array(variantRowSchema).max(20).safeParse(raw);
-    if (check.success) variantRows = check.data;
-  } catch {}
-
-  let price: number | null = null;
-  let oldPrice: number | null = null;
-  if (v.price_type !== "contact") {
-    if (!v.price.trim()) return fail("Enter a base price.");
-    const n = parseMoney(v.price);
-    if (n === null) return fail("Enter a valid price.");
-    price = n;
-    if (v.old_price.trim()) {
-      oldPrice = parseMoney(v.old_price);
-      if (oldPrice === null) return fail("Enter a valid old price.");
-      if (oldPrice <= price) return fail("Old price must be higher than the current price.");
-    }
-  }
-
-  const variants: { label: string; price: number | null; old_price: number | null; in_stock: boolean; sort_order: number }[] = [];
-  for (let i = 0; i < variantRows.length; i++) {
-    const r = variantRows[i];
-    const vp = parseMoney(r.price);
-    if (r.price.trim() && vp === null) return fail(`Enter a valid price for "${r.label}".`);
-    const vop = parseMoney(r.oldPrice);
-    if (r.oldPrice.trim() && vop === null) return fail(`Enter a valid old price for "${r.label}".`);
-    if (vp !== null && vop !== null && vop <= vp) return fail(`Old price must be higher than the price for "${r.label}".`);
-    variants.push({ label: r.label.trim(), price: vp, old_price: vop, in_stock: r.inStock, sort_order: i });
-  }
-
-  const inStock = fd.get("in_stock") === "on";
-  const status = fd.get("status") === "draft" ? "draft" : "published";
-  const productFields = {
-    category_id: v.category_id || null, subcategory_id: v.subcategory_id || null,
-    name: v.name, description: v.description || null, price, old_price: oldPrice, price_type: v.price_type,
-    badge: v.badge || null, images, in_stock: inStock, status, specs: parseSpecs(v.specs),
-  };
-
-  // save_product writes the product and replaces its variants in one transaction (see 0007).
+  // save_product writes the product and replaces its variants in one transaction (see 0007/0011).
   const save = (slug: string | null) => db.rpc("save_product", {
-    p_id: v.id || null, p_business_id: business.id, p_slug: slug, p_fields: productFields, p_variants: variants,
+    p_id: id, p_business_id: business.id, p_slug: slug, p_fields: fields, p_variants: variants,
   });
 
   let productSlug = "";
-  if (v.id) {
+  if (id) {
     const { data, error } = await save(null);
     if (error) return fail(readableDbError(error.message, error.code));
     productSlug = (data as { slug: string }).slug;
   } else {
     // Product slugs are unique across the whole marketplace (see 0006), so a clash with any
     // shop's product gets a short random suffix. The unique index is the final arbiter.
-    const productSlugBase = slugify(v.name).slice(0, 110) || "product";
+    const productSlugBase = slugify(fields.name).slice(0, 110) || "product";
     for (let i = 0; i < 5 && !productSlug; i++) {
       const { data, error } = await save(i === 0 ? productSlugBase : `${productSlugBase}-${Math.random().toString(36).slice(2, 7)}`);
       if (data) productSlug = (data as { slug: string }).slug;
@@ -175,8 +127,9 @@ export async function saveProduct(_prev: ActionState, fd: FormData): Promise<Act
 
   revalidatePath("/dashboard/products");
   refreshShop(business.slug, [productSlug]);
-  if (v.id) return done("Product saved.");
-  redirect("/dashboard/products");
+  const what = fields.status === "draft" ? "Saved as a draft (hidden from customers)." : "Published. Customers can see it now.";
+  if (id) return done(what);
+  redirect(`/dashboard/products?saved=${fields.status === "draft" ? "draft" : "published"}`);
 }
 
 export async function deleteProduct(fd: FormData) {
@@ -215,9 +168,9 @@ export async function duplicateProduct(fd: FormData) {
   const id = z.string().uuid().safeParse(fd.get("id"));
   if (!id.success) return;
   const [{ data: p }, { data: variants }] = await Promise.all([
-    db.from("products").select("name, description, category_id, subcategory_id, price, old_price, price_type, badge, images, in_stock, specs")
+    db.from("products").select("name, description, category_id, subcategory_id, price, old_price, price_type, badge, images, in_stock, specs, options")
       .eq("id", id.data).eq("business_id", business.id).maybeSingle(),
-    db.from("product_variants").select("label, price, old_price, in_stock, sort_order").eq("product_id", id.data).order("sort_order"),
+    db.from("product_variants").select("label, price, old_price, in_stock, sort_order, attributes, image_url").eq("product_id", id.data).order("sort_order"),
   ]);
   if (!p) return;
 

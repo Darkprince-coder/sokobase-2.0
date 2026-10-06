@@ -15,14 +15,34 @@ const devices = {
 };
 mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH ?? "C:/Program Files/Google/Chrome/Application/chrome.exe" });
+// Optional: view pages as a signed-in business owner (local testing only). Creates a one-time
+// sign-in link with the service key and opens it, exactly like a password-reset email would.
+async function signIn(page) {
+  const email = process.env.SCREENS_LOGIN_EMAIL;
+  if (!email) return;
+  const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/generate_link`, {
+    method: "POST",
+    headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "magiclink", email }),
+  }).then((r) => r.json());
+  const hash = res.hashed_token ?? res.properties?.hashed_token;
+  if (!hash) throw new Error(`could not create sign-in link: ${JSON.stringify(res).slice(0, 200)}`);
+  await page.goto(`${base}/auth/confirm?token_hash=${hash}&type=magiclink&next=/dashboard`, { waitUntil: "networkidle" });
+}
+
 for (const size of sizes) {
   const ctx = await browser.newContext(devices[size]);
   const page = await ctx.newPage();
+  await signIn(page);
   for (const p of paths) {
     await page.goto(base + p, { waitUntil: "networkidle" }).catch(() => {});
     await page.waitForTimeout(600);
     // Optional: click something first (e.g. open a menu): SCREENS_CLICK="button[aria-label='Open menu']"
-    if (process.env.SCREENS_CLICK) { await page.click(process.env.SCREENS_CLICK).catch((e) => console.log("click failed:", e.message.split("\n")[0])); await page.waitForTimeout(500); }
+    // Several clicks can be chained with "||".
+    for (const sel of (process.env.SCREENS_CLICK ?? "").split("||").filter(Boolean)) {
+      await page.click(sel.trim(), { timeout: 5000 }).catch((e) => console.log("click failed:", e.message.split("\n")[0]));
+      await page.waitForTimeout(400);
+    }
     const overflow = await page.evaluate(() => {
       const w = document.documentElement.clientWidth;
       const wide = [...document.querySelectorAll("body *")].filter((el) => el.getBoundingClientRect().right > w + 1 && getComputedStyle(el).position !== "fixed")
