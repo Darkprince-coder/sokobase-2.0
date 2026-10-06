@@ -21,7 +21,12 @@ export async function proxy(request: NextRequest) {
 
   if (onPortal) {
     if (path === "/") return NextResponse.redirect(new URL("/login", request.url));
-    if (isPortalPath(path)) return updateSession(request);
+    if (isPortalPath(path)) {
+      // Belt and braces with the pages' own noindex: nothing on the portal belongs in search results.
+      const response = await updateSession(request);
+      response.headers.set("X-Robots-Tag", "noindex, nofollow");
+      return response;
+    }
     if (isShared(path)) return NextResponse.next();
     return NextResponse.redirect(`https://${SITE_HOST}${path}${request.nextUrl.search}`);
   }

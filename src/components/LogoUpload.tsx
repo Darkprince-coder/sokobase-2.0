@@ -44,6 +44,7 @@ export default function LogoUpload({ value, onChange, label = "logo", inviteCode
         </Button>
         {value && <Button type="button" size="sm" variant="ghost" icon={<Trash2 size={15} />} onClick={() => onChange("")}>Remove</Button>}
       </div>
+      {label === "logo" && !error && <p className={styles.hint}>A square image works best (it is shown in a circle).</p>}
       {error && <p role="alert" className={styles.error}>{error}</p>}
     </div>
   );
