@@ -226,6 +226,7 @@ const slideSchema = z.object({
   ctaLabel: z.string().trim().max(30).default(""),
   href: z.string().trim().max(200).default("")
     .refine((v) => v === "" || (v.startsWith("/") && !v.startsWith("//")) || v.startsWith("https://"), "Links must start with / or https://"),
+  imageOnly: z.boolean().default(false),
   imageUrl: z.string().trim().max(500).default("")
     .refine((v) => v === "" || isOwnImageUrl(v), "Upload the image so it is stored on Cloudinary"),
 });
@@ -236,7 +237,8 @@ export async function saveHeroSlides(_prev: ActionState, fd: FormData): Promise<
   try { parsedJson = JSON.parse(String(fd.get("slides") ?? "[]")); } catch { return fail("Could not read the slides."); }
   const parsed = z.array(slideSchema).max(8, "Use at most 8 slides").safeParse(parsedJson);
   if (!parsed.success) return fail(firstError(parsed.error));
-  const slides = parsed.data.map((s) => (s.ctaLabel && s.href ? s : { ...s, ctaLabel: "", href: "" }));
+  if (parsed.data.some((s) => s.imageOnly && !s.imageUrl)) return fail("A slide set to 'image has its own text' needs an image.");
+  const slides = parsed.data.map((s) => (s.imageOnly || (s.ctaLabel && s.href) ? s : { ...s, ctaLabel: "", href: "" }));
 
   const { error } = await db.from("platform_settings").upsert({ key: "hero_slides", value: slides }, { onConflict: "key" });
   if (error) return fail("Could not save the slides.");

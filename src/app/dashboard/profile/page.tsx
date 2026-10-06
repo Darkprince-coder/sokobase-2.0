@@ -18,14 +18,12 @@ export default async function ProfilePage() {
 
   return (
     <>
-      <header className={styles.head}><h1>Shop profile</h1><p className={styles.sub}>This is what customers see on your storefront.</p></header>
-      <section className={styles.panel}>
-        <ProfileForm
-          business={{ ...full!, category_ids: (bizCats ?? []).map((r) => r.category_id) }}
-          categories={categories ?? []}
-          counties={counties ?? []}
-        />
-      </section>
+      <header className={styles.head}><div><h1>My shop</h1><p className={styles.sub}>This is what customers see on your shop page.</p></div></header>
+      <ProfileForm
+        business={{ ...full!, category_ids: (bizCats ?? []).map((r) => r.category_id) }}
+        categories={categories ?? []}
+        counties={counties ?? []}
+      />
     </>
   );
 }

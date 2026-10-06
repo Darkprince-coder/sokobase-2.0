@@ -39,3 +39,5 @@
   .cats { display: block; }
   .sell { display: inline-flex; }
 }
+/* Installed app: drop the marketing strip to save screen space. */
+@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) { .topbar { display: none; } }

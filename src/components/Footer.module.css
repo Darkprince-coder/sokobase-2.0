@@ -13,3 +13,7 @@
 .inner { grid-template-columns: repeat(2, 1fr); }
 .brand { grid-column: 1 / -1; }
 @media (min-width: 768px) { .inner { grid-template-columns: 2fr 1fr 1fr 1fr; } .brand { grid-column: auto; } }
+
+/* Installed app (opened from the home-screen icon): no website footer, it should feel like an app.
+   Help, About, Privacy and Terms remain in the menu drawer. */
+@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) { .footer { display: none; } }

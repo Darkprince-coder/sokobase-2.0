@@ -1,0 +1,17 @@
+.preview { border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; background: var(--bg); }
+.cover { aspect-ratio: 16 / 6; background: var(--color-primary-tint); display: grid; place-items: center; color: var(--ink-3); font-size: 13px; }
+.cover img { width: 100%; height: 100%; object-fit: cover; }
+.head { display: flex; align-items: flex-end; gap: 12px; padding: 0 14px 14px; }
+.logo { position: relative; z-index: 1; flex: none; width: 72px; height: 72px; margin-top: -32px; border-radius: 50%; overflow: hidden; border: 4px solid var(--white); background: var(--white); color: var(--green-700); display: grid; place-items: center; box-shadow: var(--shadow-1); }
+.logo img { width: 100%; height: 100%; object-fit: cover; }
+.who { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding-bottom: 2px; }
+.who strong { font-family: var(--font-display); font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.who small { display: inline-flex; align-items: center; gap: 3px; font-size: 12.5px; color: var(--ink-3); }
+.light { font-weight: 400; color: var(--ink-3); }
+.cats { display: flex; flex-wrap: wrap; gap: 8px; }
+.cat, .catOn { min-height: 44px; padding: 0 16px; border-radius: var(--radius-pill); border: 1.5px solid var(--line); background: var(--white); font-weight: 600; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+.catOn { border-color: var(--color-primary); background: var(--color-primary-tint); color: var(--green-700); }
+.cat:disabled { opacity: 0.45; cursor: not-allowed; }
+.saveOne { max-width: 760px; margin: 0 auto; display: grid; }
+/* Phones: the dashboard tab bar stays visible here, so the save bar sits just above it. */
+@media (max-width: 899px) { .aboveTabs { bottom: calc(60px + env(safe-area-inset-bottom)); padding-bottom: 10px; box-shadow: none; } }

@@ -55,7 +55,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       <AnimatePresence initial={false} custom={dir} mode="popLayout">
         <motion.div
           key={slide.id}
-          className={`${styles.slide} ${slide.imageUrl ? styles.hasImage : styles.gradient}`}
+          className={`${styles.slide} ${slide.imageUrl ? (slide.imageOnly ? styles.plainImage : styles.hasImage) : styles.gradient}`}
           custom={dir}
           variants={variants}
           initial="enter"
@@ -73,12 +73,19 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           aria-roledescription="slide"
           aria-label={`${index + 1} of ${slides.length}`}
         >
-          {slide.imageUrl && <Image src={slide.imageUrl} alt="" fill preload={index === 0} sizes="(max-width: 1024px) 100vw, 60vw" className={styles.img} draggable={false} />}
-          <div className={styles.copy}>
-            <h1 className={styles.title}>{slide.title}</h1>
-            {slide.subtitle && <p className={styles.sub}>{slide.subtitle}</p>}
-            {slide.ctaLabel && slide.href && <Link href={slide.href} className={styles.cta}>{slide.ctaLabel}</Link>}
-          </div>
+          {slide.imageUrl && <Image src={`${slide.imageUrl}#cover`} alt={slide.imageOnly ? slide.title : ""} fill preload={index === 0} sizes="(max-width: 1024px) 100vw, 60vw" className={styles.img} draggable={false} />}
+          {slide.imageOnly ? (
+            <>
+              <h1 className="visually-hidden">{slide.title}</h1>
+              {slide.href && <Link href={slide.href} className={styles.fullLink} aria-label={slide.title} />}
+            </>
+          ) : (
+            <div className={styles.copy}>
+              <h1 className={styles.title}>{slide.title}</h1>
+              {slide.subtitle && <p className={styles.sub}>{slide.subtitle}</p>}
+              {slide.ctaLabel && slide.href && <Link href={slide.href} className={styles.cta}>{slide.ctaLabel}</Link>}
+            </div>
+          )}
         </motion.div>
       </AnimatePresence>
 

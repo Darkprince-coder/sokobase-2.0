@@ -10,7 +10,7 @@ export default async function HeroPage() {
   const { data } = await db.from("platform_settings").select("value").eq("key", "hero_slides").maybeSingle();
   const initial: Slide[] = (Array.isArray(data?.value) ? data.value : []).map((s: Partial<Slide>, i: number) => ({
     id: s.id ?? `slide-${i + 1}`, title: s.title ?? "", subtitle: s.subtitle ?? "",
-    ctaLabel: s.ctaLabel ?? "", href: s.href ?? "", imageUrl: s.imageUrl ?? "",
+    ctaLabel: s.ctaLabel ?? "", href: s.href ?? "", imageUrl: s.imageUrl ?? "", imageOnly: !!s.imageOnly,
   }));
   return (
     <>

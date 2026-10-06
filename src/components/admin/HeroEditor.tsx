@@ -8,7 +8,7 @@ import { saveHeroSlides } from "@/app/admin/actions";
 import type { ActionState } from "@/lib/action-state";
 import styles from "./admin.module.css";
 
-export type Slide = { id: string; title: string; subtitle: string; ctaLabel: string; href: string; imageUrl: string };
+export type Slide = { id: string; title: string; subtitle: string; ctaLabel: string; href: string; imageUrl: string; imageOnly?: boolean };
 const newId = () => Math.random().toString(36).slice(2, 10);
 
 export default function HeroEditor({ initial }: { initial: Slide[] }) {
@@ -39,11 +39,15 @@ export default function HeroEditor({ initial }: { initial: Slide[] }) {
             </div>
             <ImageUpload value={s.imageUrl} onChange={(imageUrl) => patch(s.id, { imageUrl })} />
             <p className={styles.hint}>Best size 1600 x 680 px. Keep the subject on the right; text sits on the left.</p>
+            <label className={styles.check} style={{ margin: "8px 0" }}>
+              <input type="checkbox" checked={!!s.imageOnly} onChange={(e) => patch(s.id, { imageOnly: e.target.checked })} />
+              My image already has its own text (show the image only; the title is used for screen readers)
+            </label>
             <div className={styles.grid2}>
               <label className={styles.field}>Title<input value={s.title} maxLength={90} onChange={(e) => patch(s.id, { title: e.target.value })} required /></label>
               <label className={styles.field}>Subtitle (optional)<input value={s.subtitle} maxLength={160} onChange={(e) => patch(s.id, { subtitle: e.target.value })} /></label>
-              <label className={styles.field}>Button text (optional)<input value={s.ctaLabel} maxLength={30} onChange={(e) => patch(s.id, { ctaLabel: e.target.value })} placeholder="Shop now" /></label>
-              <label className={styles.field}>Button link<input value={s.href} maxLength={200} onChange={(e) => patch(s.id, { href: e.target.value })} placeholder="/products?badge=offer" /></label>
+              <label className={styles.field} hidden={!!s.imageOnly}>Button text (optional)<input value={s.ctaLabel} maxLength={30} onChange={(e) => patch(s.id, { ctaLabel: e.target.value })} placeholder="Shop now" /></label>
+              <label className={styles.field}>{s.imageOnly ? "Link when tapped" : "Button link"}<input value={s.href} maxLength={200} onChange={(e) => patch(s.id, { href: e.target.value })} placeholder="/products?badge=offer" /></label>
             </div>
           </motion.div>
         ))}

@@ -27,19 +27,22 @@ const profileSchema = z.object({
 export async function updateProfile(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const { db, business } = await bizDb();
   const parsed = profileSchema.safeParse(fields(fd));
-  if (!parsed.success) return fail(firstError(parsed.error));
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return { error: issue?.message ?? "Check the form and try again.", field: String(issue?.path[0] ?? "") || undefined };
+  }
   const v = parsed.data;
   const whatsapp = normalizeKePhone(v.whatsapp);
-  if (!whatsapp) return fail("Enter a valid Kenyan WhatsApp number, e.g. 07XXXXXXXX.");
-  if ((v.logo_url && !isOwnImageUrl(v.logo_url)) || (v.cover_url && !isOwnImageUrl(v.cover_url))) return fail("Upload images using the upload buttons.");
+  if (!whatsapp) return { error: "Enter a valid Kenyan WhatsApp number, e.g. 0712 345 678.", field: "whatsapp" };
+  if ((v.logo_url && !isOwnImageUrl(v.logo_url)) || (v.cover_url && !isOwnImageUrl(v.cover_url))) return { error: "Upload images using the upload buttons.", field: "logo_url" };
 
   let categoryIds: string[] = [];
   try {
     const check = z.array(z.string().uuid()).min(1, "Choose at least one category").max(3, "Choose up to 3 categories").safeParse(JSON.parse(v.category_ids));
-    if (!check.success) return fail(check.error.issues[0]?.message ?? "Choose 1 to 3 categories.");
+    if (!check.success) return { error: check.error.issues[0]?.message ?? "Choose 1 to 3 categories.", field: "category_ids" };
     categoryIds = check.data;
   } catch {
-    return fail("Choose at least one category.");
+    return { error: "Choose at least one category.", field: "category_ids" };
   }
 
   const { error } = await db.from("businesses").update({
@@ -54,7 +57,7 @@ export async function updateProfile(_prev: ActionState, fd: FormData): Promise<A
 
   revalidatePath("/dashboard");
   refreshShop(business.slug);
-  return done("Shop profile saved.");
+  return done("Saved. Your shop page is updated.");
 }
 
 // ---------- Products ----------

@@ -10,7 +10,7 @@ const DEFAULT_SLIDE: HeroSlide = {
   href: "/products",
 };
 
-type Stored = { id?: string; title?: string; subtitle?: string; ctaLabel?: string; href?: string; imageUrl?: string };
+type Stored = { id?: string; title?: string; subtitle?: string; ctaLabel?: string; href?: string; imageUrl?: string; imageOnly?: boolean };
 
 // Reads slides saved in Admin > Hero slides. Falls back to lib/site.ts, then the default gradient slide.
 export async function getHeroSlides(): Promise<HeroSlide[]> {
@@ -21,7 +21,7 @@ export async function getHeroSlides(): Promise<HeroSlide[]> {
       .filter((s) => s.id && s.title)
       .map((s): HeroSlide => ({
         id: s.id!, title: s.title!, subtitle: s.subtitle || undefined,
-        ctaLabel: s.ctaLabel || undefined, href: s.href || undefined, imageUrl: s.imageUrl || null,
+        ctaLabel: s.ctaLabel || undefined, href: s.href || undefined, imageUrl: s.imageUrl || null, imageOnly: !!(s.imageOnly && s.imageUrl),
       }));
     if (slides.length) return slides;
   } catch {

@@ -25,4 +25,5 @@ export type HeroSlide = {
   subtitle?: string;
   ctaLabel?: string;
   href?: string;
+  imageOnly?: boolean; // banner image already contains its own text: show the image alone
 };
