@@ -33,3 +33,5 @@
   .dots { display: none; }
   .thumbs { display: flex; }
 }
+/* Tablets (single column): keep the photo from filling the whole screen so the price stays in view. */
+@media (min-width: 600px) and (max-width: 859px) { .gallery { max-width: 520px; width: 100%; margin: 0 auto; } }

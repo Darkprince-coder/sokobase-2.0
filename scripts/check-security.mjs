@@ -2,7 +2,7 @@
 // optionally as a signed-in business owner, and reports anything that is NOT refused.
 //
 //   npm run check:security                       anonymous checks
-//   TEST_OWNER_EMAIL=... TEST_OWNER_PASSWORD=... npm run check:security
+//   TEST_OWNER_EMAIL=... [TEST_OWNER_PASSWORD=...] npm run check:security
 //                                                 + checks as a business owner (use a test shop)
 //
 // Safe to run against real data: every write it attempts either must be refused, or writes a row's
@@ -70,7 +70,19 @@ async function anonymousChecks() {
 
 async function ownerChecks(email, password) {
   const db = createClient(url, anonKey, { auth: { persistSession: false } });
-  const { data: auth, error } = await db.auth.signInWithPassword({ email, password });
+  // With a password: normal sign-in. Without one (local only): a one-time sign-in link made with the
+  // service key, the same mechanism as a password-reset email.
+  let auth, error;
+  if (password) ({ data: auth, error } = await db.auth.signInWithPassword({ email, password }));
+  else {
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const link = await fetch(`${url}/auth/v1/admin/generate_link`, {
+      method: "POST", headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "magiclink", email }),
+    }).then((r) => r.json()).catch(() => ({}));
+    const hash = link.hashed_token ?? link.properties?.hashed_token;
+    ({ data: auth, error } = hash ? await db.auth.verifyOtp({ type: "magiclink", token_hash: hash }) : { data: {}, error: { message: "could not create sign-in link" } });
+  }
   if (error || !auth.user) return record("Sign in as test owner", false, error?.message ?? "no user");
   record("Sign in as test owner", true);
 
@@ -118,7 +130,7 @@ async function ownerChecks(email, password) {
 }
 
 await anonymousChecks();
-if (process.env.TEST_OWNER_EMAIL && process.env.TEST_OWNER_PASSWORD) await ownerChecks(process.env.TEST_OWNER_EMAIL, process.env.TEST_OWNER_PASSWORD);
+if (process.env.TEST_OWNER_EMAIL && (process.env.TEST_OWNER_PASSWORD || process.env.SUPABASE_SERVICE_ROLE_KEY)) await ownerChecks(process.env.TEST_OWNER_EMAIL, process.env.TEST_OWNER_PASSWORD);
 else console.log("(Set TEST_OWNER_EMAIL and TEST_OWNER_PASSWORD to also run the business-owner checks.)\n");
 
 let failed = 0;
