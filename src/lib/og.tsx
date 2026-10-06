@@ -40,7 +40,12 @@ export async function ogCard({ eyebrow, title, subtitle, price, photo, round }: 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             {price ? <div style={{ fontSize: 46, fontFamily: "Display", fontWeight: 700, color: GREEN, display: "flex" }}>{price}</div> : <div style={{ display: "flex" }} />}
             <div style={{ display: "flex", alignItems: "center", fontSize: 32, fontFamily: "Display", fontWeight: 700, color: INK }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: GREEN, marginRight: 12, display: "flex" }} />
+              <svg width="44" height="44" viewBox="0 0 48 48" style={{ marginRight: 12 }}>
+                <rect width="48" height="48" rx="11" fill={GREEN} />
+                <rect x="11" y="11" width="11.5" height="11.5" rx="2.8" fill="#fff" />
+                <rect x="25.5" y="11" width="11.5" height="11.5" rx="2.8" fill="#C97A2B" />
+                <path d="M13.8 25.5h20.4a2.8 2.8 0 0 1 2.8 2.8v8.7H28v-4.6a4 4 0 0 0-8 0V37h-9v-8.7a2.8 2.8 0 0 1 2.8-2.8z" fill="#fff" />
+              </svg>
               SokoBase
             </div>
           </div>
