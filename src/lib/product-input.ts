@@ -108,7 +108,9 @@ export function buildProductPayload(input: ProductInput, isOwnImage: (url: strin
       const distinct = new Set(effective);
       if (distinct.size > 1) {
         rows.forEach((r, i) => { r.price = effective[i]; });
-        const min = Math.min(...effective);
+        // The card shows the lowest price among options in stock: the option the page opens on.
+        const inStockPrices = effective.filter((_, i) => rows[i].in_stock);
+        const min = Math.min(...(inStockPrices.length ? inStockPrices : effective));
         if (oldPrice !== null && oldPrice <= min) oldPrice = null;
         price = min;
         priceType = "from";

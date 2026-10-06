@@ -95,6 +95,20 @@ export function valueState(variants: PublicVariant[], groups: OptionGroup[], sel
   return matches.some((v) => v.inStock) ? "ok" : "out";
 }
 
+// The combination a product page opens with: the cheapest one in stock (ties: the seller's order),
+// so the price on the product card is exactly the price the customer sees first. If everything is
+// sold out, the first combination. Returns {} when there are no options.
+export function defaultSelection(groups: OptionGroup[], variants: PublicVariant[], basePrice: number | null): Attributes {
+  if (!groups.length || !variants.length) return {};
+  const pool = variants.some((v) => v.inStock) ? variants.filter((v) => v.inStock) : variants;
+  let best = pool[0];
+  for (const v of pool) if ((v.price ?? basePrice ?? Infinity) < (best.price ?? basePrice ?? Infinity)) best = v;
+  return Object.fromEntries(groups.map((g) => [g.name, best.attributes[g.name]]).filter(([, value]) => value));
+}
+
+// Photos can be linked to the values of the first option group, whatever it is (Colour, Type...).
+export const photoGroupOf = (groups: OptionGroup[]) => groups[0] ?? null;
+
 // Lowest and highest price across combinations (falling back to the product price).
 export function priceRange(basePrice: number | null, variants: { price: number | null }[]) {
   const prices = variants.map((v) => v.price ?? basePrice).filter((p): p is number => p != null);

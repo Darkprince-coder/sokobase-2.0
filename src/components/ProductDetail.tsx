@@ -11,7 +11,7 @@ import { formatKes, formatPrice, discountPercent } from "@/lib/format";
 import { site, whatsappLink } from "@/lib/site";
 import { useWishlist } from "@/lib/wishlist";
 import { logOrderClick } from "@/lib/track";
-import { findVariant, groupsForDisplay, isColourGroup, priceRange, swatchFor, valueState, type Attributes } from "@/lib/variants";
+import { defaultSelection, findVariant, groupsForDisplay, isColourGroup, photoGroupOf, priceRange, swatchFor, valueState, type Attributes } from "@/lib/variants";
 import type { ProductDetail as PD } from "@/lib/catalog";
 import styles from "./ProductDetail.module.css";
 
@@ -20,9 +20,9 @@ export default function ProductDetail({ product }: { product: PD }) {
   const saved = has(product.id);
   const { groups, variants } = useMemo(() => groupsForDisplay(product.options, product.variants), [product]);
 
-  // Preselect values that have only one choice; otherwise the customer chooses.
-  const [selection, setSelection] = useState<Attributes>(() =>
-    Object.fromEntries(groups.filter((g) => g.values.length === 1).map((g) => [g.name, g.values[0]])));
+  // Open on the cheapest option in stock, so the price matches the product card; the customer
+  // can then switch options and the price, stock and photo follow.
+  const [selection, setSelection] = useState<Attributes>(() => defaultSelection(groups, variants, product.price));
   const [nudge, setNudge] = useState(false);
   const selectorsRef = useRef<HTMLDivElement>(null);
 
@@ -39,10 +39,10 @@ export default function ProductDetail({ product }: { product: PD }) {
     : variant || range.min === range.max ? formatKes(price ?? 0)
     : `${formatKes(range.min ?? 0)} – ${formatKes(range.max ?? 0)}`;
 
-  // Show the chosen colour's photo when it has one.
-  const colourGroup = groups.find((g) => isColourGroup(g.name));
-  const colourPhoto = colourGroup && selection[colourGroup.name]
-    ? variants.find((v) => v.attributes[colourGroup.name] === selection[colourGroup.name] && v.imageUrl)?.imageUrl ?? null
+  // Show the photo linked to the chosen option (first option group: colour, type...), if any.
+  const photoGroup = photoGroupOf(groups);
+  const colourPhoto = photoGroup && selection[photoGroup.name]
+    ? variants.find((v) => v.attributes[photoGroup.name] === selection[photoGroup.name] && v.imageUrl)?.imageUrl ?? null
     : null;
   const images = useMemo(() => (colourPhoto && !product.images.includes(colourPhoto) ? [colourPhoto, ...product.images] : product.images), [colourPhoto, product.images]);
   const photoIndex = colourPhoto ? Math.max(0, images.indexOf(colourPhoto)) : 0;
@@ -53,7 +53,17 @@ export default function ProductDetail({ product }: { product: PD }) {
   const message = `Hi ${product.business}, I'm interested in "${product.name}"${chosen ? ` (${chosen})` : ""} - ${url}. ${ask}`;
   const ready = missing.length === 0;
 
-  const choose = (group: string, value: string) => { setSelection((s) => ({ ...s, [group]: s[group] === value ? "" : value })); setNudge(false); };
+  // Picking a value keeps the other choices when that combination exists; otherwise it moves to the
+  // closest available combination for the new value.
+  const choose = (group: string, value: string) => {
+    setSelection((s) => {
+      const next = { ...s, [group]: value };
+      if (findVariant(variants, next, groups)) return next;
+      const match = variants.find((v) => v.attributes[group] === value && v.inStock) ?? variants.find((v) => v.attributes[group] === value);
+      return match ? Object.fromEntries(groups.map((g) => [g.name, match.attributes[g.name]])) : next;
+    });
+    setNudge(false);
+  };
   const askToChoose = (e: React.MouseEvent) => {
     if (ready) { logOrderClick(product.businessId, product.id); return; }
     e.preventDefault();
@@ -98,8 +108,8 @@ export default function ProductDetail({ product }: { product: PD }) {
                       const on = selection[g.name] === value;
                       const sw = colour ? swatchFor(value) : null;
                       return (
-                        <button key={value} type="button" aria-pressed={on} disabled={st === "none"}
-                          className={`${sw ? styles.swatchBtn : styles.valueBtn} ${on ? styles.on : ""} ${st === "out" ? styles.out : ""}`}
+                        <button key={value} type="button" aria-pressed={on} disabled={!variants.some((v) => v.attributes[g.name] === value)}
+                          className={`${sw ? styles.swatchBtn : styles.valueBtn} ${on ? styles.on : ""} ${st === "out" ? styles.out : ""} ${st === "none" ? styles.other : ""}`}
                           onClick={() => choose(g.name, value)} title={st === "out" ? `${value} (sold out)` : value}>
                           {sw ? <><i style={{ background: sw }} /><span className="visually-hidden">{value}</span></> : value}
                         </button>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildCombos, comboCount, comboLabel, findVariant, groupsForDisplay, normaliseGroups, priceRange, valueState, MAX_COMBOS,
+  buildCombos, comboCount, comboLabel, defaultSelection, findVariant, groupsForDisplay, normaliseGroups, priceRange, valueState, MAX_COMBOS,
   type PublicVariant,
 } from "@/lib/variants";
 
@@ -66,5 +66,27 @@ describe("product page selection", () => {
     const { groups, variants: shown } = groupsForDisplay([], old);
     expect(groups).toEqual([{ name: "Option", values: ["5 by 6"] }]);
     expect(shown[0].attributes).toEqual({ Option: "5 by 6" });
+  });
+});
+
+describe("defaultSelection", () => {
+  const groups = [{ name: "Size", values: ["S", "M", "L"] }];
+  const pv = (Size: string, price: number | null, inStock = true): PublicVariant =>
+    ({ id: Size, label: Size, attributes: { Size }, price, oldPrice: null, inStock, imageUrl: null });
+
+  it("opens on the cheapest option in stock, so the card price matches", () => {
+    expect(defaultSelection(groups, [pv("S", 350), pv("M", 200), pv("L", 400)], 500)).toEqual({ Size: "M" });
+  });
+  it("skips sold-out options", () => {
+    expect(defaultSelection(groups, [pv("S", 100, false), pv("M", 200), pv("L", 400)], null)).toEqual({ Size: "M" });
+  });
+  it("uses the seller's order when prices are equal (or inherited)", () => {
+    expect(defaultSelection(groups, [pv("S", null), pv("M", null)], 900)).toEqual({ Size: "S" });
+  });
+  it("falls back to the cheapest option when everything is sold out", () => {
+    expect(defaultSelection(groups, [pv("S", 300, false), pv("M", 100, false)], null)).toEqual({ Size: "M" });
+  });
+  it("returns nothing without options", () => {
+    expect(defaultSelection([], [], 100)).toEqual({});
   });
 });

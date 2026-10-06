@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import {
-  OPTION_PRESETS, MAX_GROUPS, MAX_COMBOS, comboCount, comboLabel, isColourGroup, swatchFor,
+  OPTION_PRESETS, MAX_GROUPS, MAX_COMBOS, comboCount, comboLabel, isColourGroup, photoGroupOf, swatchFor,
   type Combo, type OptionGroup,
 } from "@/lib/variants";
 import styles from "./ProductForm.module.css";
@@ -30,7 +30,7 @@ type Props = {
 export default function OptionsEditor(p: Props) {
   const [drafts, setDrafts] = useState<string[]>(["", ""]);
   const used = new Set(p.groups.map((g) => g.name.toLowerCase()));
-  const colourGroup = p.groups.find((g) => isColourGroup(g.name));
+  const colourGroup = photoGroupOf(p.groups); // photos link to the first option group (colour, type...)
   const total = comboCount(p.groups);
 
   const setGroup = (i: number, patch: Partial<OptionGroup>) => p.onGroups(p.groups.map((g, j) => (j === i ? { ...g, ...patch } : g)));
@@ -71,10 +71,22 @@ export default function OptionsEditor(p: Props) {
                   <button type="button" aria-label={`Remove ${v}`} onClick={() => toggleValue(i, v)}><X size={13} /></button>
                 </span>
               ))}
-              <input className={styles.chipInput} value={drafts[i]} placeholder={g.values.length ? "Add another…" : "Type a value, press Enter"}
-                onChange={(e) => setDrafts((d) => d.map((x, j) => (j === i ? e.target.value : x)))}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addValues(i, drafts[i]); } }}
-                onBlur={() => addValues(i, drafts[i])} enterKeyHint="done" />
+              <span className={styles.chipEntry}>
+                <input className={styles.chipInput} value={drafts[i]} placeholder={g.values.length ? "Add another…" : `Type e.g. ${preset?.values[0] ?? "Large"}, tap Add`}
+                  aria-label={`Add a ${g.name || "value"}`}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    // A comma (some phone keyboards have no Enter) also adds the value.
+                    if (v.includes(",")) addValues(i, v); else setDrafts((d) => d.map((x, j) => (j === i ? v : x)));
+                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addValues(i, drafts[i]); } }}
+                  onBlur={() => addValues(i, drafts[i])} enterKeyHint="done" />
+                {drafts[i].trim() && (
+                  <button type="button" className={styles.chipAdd} onMouseDown={(e) => e.preventDefault()} onClick={() => addValues(i, drafts[i])}>
+                    <Plus size={15} aria-hidden="true" /> Add
+                  </button>
+                )}
+              </span>
             </div>
             {preset && preset.values.length > 0 && (
               <div className={styles.quick}>
@@ -101,11 +113,11 @@ export default function OptionsEditor(p: Props) {
 
       {colourGroup && colourGroup.values.length > 0 && p.photos.length > 0 && (
         <div className={styles.colourPhotos}>
-          <h4>Photo for each colour <small>(optional)</small></h4>
-          <p className={styles.hint}>When a customer picks a colour, its photo is shown.</p>
+          <h4>Photo for each {colourGroup.name.toLowerCase()} <small>(optional)</small></h4>
+          <p className={styles.hint}>Tap one of your photos for each {colourGroup.name.toLowerCase()}. When a customer picks it, that photo is shown.</p>
           {colourGroup.values.map((c) => (
             <div key={c} className={styles.colourRow}>
-              <span className={styles.colourName}>{swatchFor(c) && <i className={styles.swatch} style={{ background: swatchFor(c)! }} />}{c}</span>
+              <span className={styles.colourName}>{isColourGroup(colourGroup.name) && swatchFor(c) && <i className={styles.swatch} style={{ background: swatchFor(c)! }} />}{c}</span>
               <div className={styles.pickRow}>
                 {p.photos.map((url) => (
                   <button key={url} type="button" aria-pressed={p.colourPhotos[c] === url} aria-label={`Use this photo for ${c}`}
@@ -125,7 +137,7 @@ export default function OptionsEditor(p: Props) {
           {!p.priceOnRequest && (
             <label className={styles.switchRow}>
               <input type="checkbox" checked={p.samePrice} onChange={(e) => p.onSamePrice(e.target.checked)} />
-              <span><strong>Same price for all options</strong><small>Switch off if some options cost more (e.g. bigger sizes).</small></span>
+              <span><strong>Same price for all options</strong><small>Leave off to give each option its own price. Switch on if every option costs the same.</small></span>
             </label>
           )}
           <div className={styles.comboHead}>

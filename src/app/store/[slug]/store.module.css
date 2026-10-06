@@ -1,6 +1,6 @@
 .page { padding-bottom: 40px; padding-top: 4px; }
 /* Fixed shape so any photo fits: wide on desktop, a little taller on phones. */
-.cover { position: relative; aspect-ratio: 16 / 7; border-radius: var(--radius-lg); overflow: hidden; background: var(--color-primary-tint); }
+.cover { position: relative; aspect-ratio: 16 / 7; border-radius: var(--radius-lg); overflow: hidden; background: var(--color-primary-tint); border: 1px solid var(--line); box-shadow: var(--shadow-1); }
 .coverImg { object-fit: cover; }
 .head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px 16px; padding-top: 16px; padding-bottom: 18px; }
 .logo { position: relative; z-index: 1; flex: none; width: 88px; height: 88px; border-radius: 50%; overflow: hidden; background: var(--white); color: var(--green-700); display: grid; place-items: center; border: 4px solid var(--white); box-shadow: var(--shadow-1); }

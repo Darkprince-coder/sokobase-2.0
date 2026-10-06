@@ -60,7 +60,9 @@
 .chipOn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 6px 6px 12px; border-radius: var(--radius-pill); background: var(--color-primary-tint); color: var(--green-700); font-weight: 600; font-size: 14px; }
 .chipOn button { width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
 .chipOn button:hover { background: rgba(0,0,0,0.08); }
-.chipInput { flex: 1; min-width: 140px; border: 0; outline: 0; font: inherit; font-size: 16px; padding: 6px; background: transparent; }
+.chipEntry { flex: 1 1 180px; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.chipInput { flex: 1; min-width: 0; border: 0; outline: 0; font: inherit; font-size: 16px; padding: 6px; background: transparent; }
+.chipAdd { flex: none; display: inline-flex; align-items: center; gap: 4px; min-height: 38px; padding: 0 14px; border: 0; border-radius: var(--radius-pill); background: var(--color-primary); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; }
 .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); }
 .quick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-3); }
 .quick button { min-height: 32px; padding: 0 10px; border: 1px dashed var(--line); border-radius: var(--radius-pill); background: var(--white); color: var(--ink-2); font-size: 13px; cursor: pointer; }

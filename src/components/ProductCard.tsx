@@ -44,8 +44,12 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
         <Link href={href} className={styles.name}>{product.name}</Link>
         <div className={styles.bottom}>
           <div className={styles.priceBox}>
-            <span className={product.priceType === "contact" || product.price == null ? styles.ask : styles.price}>{formatPrice(product.price, product.priceType)}</span>
-            {off > 0 && product.oldPrice && <span className={styles.old}>{formatKes(product.oldPrice)}</span>}
+            {/* Products with options show their lowest price: the option the product page opens on. */}
+            <span className={product.priceType === "contact" || product.price == null ? styles.ask : styles.price}>
+              {product.priceType === "from" && product.price != null ? formatKes(product.price) : formatPrice(product.price, product.priceType)}
+            </span>
+            {off > 0 && product.oldPrice ? <span className={styles.old}>{formatKes(product.oldPrice)}</span>
+              : product.priceType === "from" ? <span className={styles.opts}>More options</span> : null}
           </div>
           <a className={styles.wa} href={whatsappLink(product.whatsapp, message)} target="_blank" rel="noopener noreferrer"
             onClick={() => logOrderClick(product.businessId, product.id)}

@@ -77,6 +77,14 @@ describe("variations", () => {
     expect(p.variants.find((v) => v.label === "Red / M")?.price).toBe(1200);
   });
 
+  it("the card price is the cheapest option in stock", () => {
+    const combos = [
+      { attributes: { Colour: "Red", Size: "M" }, price: 900, oldPrice: null, inStock: false, imageUrl: null },
+      { attributes: { Colour: "Blue", Size: "M" }, price: 1100, oldPrice: null, inStock: true, imageUrl: null },
+    ];
+    expect(ok({ options, samePrice: false, combos }).fields.price).toBe(1100);
+  });
+
   it("price switched to 'differs' but all equal stays fixed", () => {
     const p = ok({ options, samePrice: false });
     expect(p.fields.price_type).toBe("fixed");

@@ -4,7 +4,7 @@ import { CheckCircle2, Loader2, Plus, Trash2 } from "lucide-react";
 import ProductImages from "./ProductImages";
 import OptionsEditor, { type ComboOverride } from "./OptionsEditor";
 import { saveProduct } from "@/app/dashboard/actions";
-import { buildCombos, comboKey, isColourGroup, normaliseGroups, type Combo, type OptionGroup } from "@/lib/variants";
+import { buildCombos, comboKey, normaliseGroups, photoGroupOf, type Combo, type OptionGroup } from "@/lib/variants";
 import type { ActionState } from "@/lib/action-state";
 import { site } from "@/lib/site";
 import styles from "./ProductForm.module.css";
@@ -23,12 +23,12 @@ const str = (n: number | null | undefined) => (n == null ? "" : String(n));
 
 // Initial option state, including older products whose options were a single plain list.
 function initialOptions(product?: EditableProduct) {
-  if (!product?.variants.length) return { groups: product?.options ?? [], overrides: {}, colourPhotos: {}, samePrice: true };
+  if (!product?.variants.length) return { groups: product?.options ?? [], overrides: {}, colourPhotos: {}, samePrice: !!product };
   const legacy = !product.options.length;
   const groups = legacy ? [{ name: "Option", values: product.variants.map((v) => v.label) }] : product.options;
   const overrides: Record<string, ComboOverride> = {};
   const colourPhotos: Record<string, string> = {};
-  const colour = groups.find((g) => isColourGroup(g.name));
+  const colour = photoGroupOf(groups); // photos belong to the first option group
   for (const v of product.variants) {
     const attrs = legacy ? { Option: v.label } : v.attributes;
     overrides[comboKey(attrs, groups)] = { price: str(v.price), oldPrice: str(v.oldPrice), inStock: v.inStock };
@@ -60,7 +60,7 @@ export default function ProductForm({ product, categories, subcategories, remain
   const [moreOpen, setMoreOpen] = useState(!!(product?.description || product?.category_id || Object.keys(product?.specs ?? {}).length));
 
   const cleanGroups = useMemo(() => (hasOptions ? normaliseGroups(groups) : []), [groups, hasOptions]);
-  const colourGroup = cleanGroups.find((g) => isColourGroup(g.name));
+  const colourGroup = photoGroupOf(cleanGroups);
   const keyOf = (c: Combo) => comboKey(c.attributes, cleanGroups);
   const combos: Combo[] = useMemo(() => buildCombos(cleanGroups).map((c) => {
     const o = overrides[comboKey(c.attributes, cleanGroups)];
@@ -124,8 +124,9 @@ export default function ProductForm({ product, categories, subcategories, remain
         {!onRequest && (
           <div className={styles.priceRow}>
             <label className={styles.field} id="f-price">
-              <span>{hasOptions && !samePrice ? "Starting price (KSh)" : "Price (KSh)"}</span>
+              <span>{hasOptions && !samePrice ? "Main price (KSh)" : "Price (KSh)"}</span>
               <div className={styles.money}><em>KSh</em><input name="price" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="1500" aria-invalid={!!fieldError("price")} /></div>
+              {hasOptions && !samePrice && <span className={styles.hint}>Used for any option you leave without its own price.</span>}
               {fieldError("price") && <em role="alert" className={styles.fieldError}>{fieldError("price")}</em>}
             </label>
             {showDiscount && (

@@ -90,3 +90,4 @@
   .mobileBar { display: none; }
 }
 .actions > button:last-child { min-height: 52px; border-radius: var(--radius-md); }
+.other { opacity: 0.55; } /* exists, but not with the current other choice: tapping switches the combination */
