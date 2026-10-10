@@ -35,7 +35,10 @@ async function anonymousChecks() {
   const ownerCol = await db.from("businesses").select("owner_id").limit(1);
   record("Visitors cannot read shop owner ids", denied(ownerCol), why(ownerCol, "owner_id was readable"));
 
-  for (const table of ["invites", "order_clicks", "reports", "admin_audit_log", "profiles", "subscriptions"]) {
+  const requested = await db.from("businesses").select("requested_plan_id").limit(1);
+  record("Visitors cannot read a shop's requested plan", denied(requested), why(requested, "requested_plan_id was readable"));
+
+  for (const table of ["invites", "order_clicks", "reports", "admin_audit_log", "profiles", "subscriptions", "signup_attempts"]) {
     const r = await db.from(table).select("*").limit(1);
     record(`Visitors cannot read ${table}`, blocked(r), why(r, `${r.data?.length ?? 0} row(s) returned`));
   }

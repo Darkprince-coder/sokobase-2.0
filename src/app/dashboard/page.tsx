@@ -43,7 +43,7 @@ export default async function DashboardOverview() {
   const doneCount = steps.filter((s) => s.done).length;
   const visibility = shopVisibility(business.status, usage);
   const contact = site.supportWhatsapp
-    ? whatsappLink(site.supportWhatsapp, visibility === "expired" ? `Hi SokoBase, I'd like to renew the ${usage.planName ?? ""} plan for ${business.name}.` : `Hi SokoBase, I need help with my shop ${business.name}.`)
+    ? whatsappLink(site.supportWhatsapp, visibility === "expired" ? `Hi SokoBase, I'd like to renew the ${usage.planName ?? ""} plan for ${business.name}.` : visibility === "pending" ? `Hi SokoBase, I've signed up my shop ${business.name} and it's waiting for approval.` : `Hi SokoBase, I need help with my shop ${business.name}.`)
     : null;
 
   return (

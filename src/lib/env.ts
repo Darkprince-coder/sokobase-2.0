@@ -26,8 +26,10 @@ const recommended: Record<string, string> = {
   NEXT_PUBLIC_GA_ID: "Google Analytics is off (set your real G-... measurement ID)",
   NEXT_PUBLIC_SENTRY_DSN: "error monitoring is off (create a free Sentry project and paste its DSN)",
   ORDER_CLICK_SALT: "order-click fingerprints are salted with the service role key instead",
-  NEXT_PUBLIC_TURNSTILE_SITE_KEY: "bot protection on sign-in and password reset is off",
-  TURNSTILE_SECRET_KEY: "bot protection on sign-in and password reset is off",
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: "bot protection on sign-in, sign-up and password reset is off",
+  TURNSTILE_SECRET_KEY: "bot protection on sign-in, sign-up and password reset is off",
+  RESEND_API_KEY: "no new sign-up alerts or approval emails are sent",
+  CRON_SECRET: "abandoned sign-ups are not cleaned up automatically",
 };
 
 export function checkEnv() {

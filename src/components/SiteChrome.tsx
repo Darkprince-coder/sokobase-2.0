@@ -5,7 +5,7 @@ import Logo from "./Logo";
 import { site } from "@/lib/site";
 
 // Business sign-in, password and invite pages: just the logo and the form, no shop navigation.
-const AUTH_PAGES = ["/login", "/forgot-password", "/reset-password", "/join"];
+const AUTH_PAGES = ["/login", "/signup", "/forgot-password", "/reset-password", "/join"];
 const isAuthPage = (path: string) => AUTH_PAGES.some((p) => path === p || path.startsWith(`${p}/`));
 
 // Public pages get the header, footer and bottom nav. The admin area has its own shell.

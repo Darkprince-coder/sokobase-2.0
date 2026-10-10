@@ -103,3 +103,15 @@
 .danger h2 { color: var(--color-danger); }
 .dangerForm button[type="submit"] { color: var(--color-danger); border-color: var(--color-danger); }
 .dangerForm button[type="submit"]:hover { background: var(--color-danger); color: #fff; }
+
+/* ---------- New sign-ups ---------- */
+.signupTop { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
+.signupLogo { width: 56px; height: 56px; border-radius: 12px; border: 1px solid var(--line); background: var(--color-primary-tint); color: var(--color-primary); display: grid; place-items: center; font-weight: 700; font-size: 22px; object-fit: contain; flex-shrink: 0; }
+.signupChat { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; background: #1f7a4d; color: #fff; font-size: 13.5px; font-weight: 600; text-decoration: none; }
+.signupProducts { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 14px 0; font-size: 14px; }
+.signupThumbs { display: flex; gap: 6px; flex-wrap: wrap; }
+.signupThumbs img { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; border: 1px solid var(--line); }
+.signupActions { display: grid; gap: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
+.signupReject { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.signupReject label { display: inline-flex; align-items: center; gap: 6px; }
+.navBadge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--color-ochre); color: #fff; font-size: 12px; font-weight: 700; display: inline-grid; place-items: center; }

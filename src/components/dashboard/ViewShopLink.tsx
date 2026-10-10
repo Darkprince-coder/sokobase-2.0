@@ -22,6 +22,7 @@ export default function ViewShopLink({ href, visibility, endedOn, renewHref, asB
   const copy = {
     suspended: { title: "Your shop is paused", text: "SokoBase has paused your shop, so customers can't see it right now. Your products are saved. Message us to sort it out.", cta: "Message SokoBase" },
     expired: { title: "Your shop is hidden", text: `Your plan ended${endedOn ? ` on ${endedOn}` : ""}, so customers can't see your shop right now. Your products are saved and come back as soon as you renew.`, cta: "Renew on WhatsApp" },
+    pending: { title: "Waiting for approval", text: "SokoBase is checking your shop, usually within a day. Customers can't see it yet. Add your products now (up to 10) so it's ready the moment it goes live. We'll email you when it's approved.", cta: "Message SokoBase" },
     "no-plan": { title: "Your shop isn't live yet", text: "Your shop needs an active plan before customers can see it. Your products are saved. Message us to get started.", cta: "Message SokoBase" },
   }[visibility];
 

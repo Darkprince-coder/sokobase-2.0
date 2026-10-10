@@ -6,6 +6,7 @@ import { daysLeft, formatDate, nowMs } from "@/lib/dates";
 import { renewalReminderLink } from "@/lib/reminders";
 import { GRACE_DAYS } from "@/lib/dashboard";
 import styles from "@/components/admin/admin.module.css";
+import { pendingSignupIds } from "@/lib/signups";
 
 type SubRow = {
   business_id: string; ends_at: string;
@@ -25,7 +26,7 @@ export default async function AdminOverview() {
   sixMonthsAgo.setUTCMonth(sixMonthsAgo.getUTCMonth() - 5, 1);
   sixMonthsAgo.setUTCHours(0, 0, 0, 0);
 
-  const [biz, prods, clicks, subs, recent, reports, payments] = await Promise.all([
+  const [biz, prods, clicks, subs, recent, reports, payments, pendingIds] = await Promise.all([
     db.from("businesses").select("id", { count: "exact", head: true }),
     db.from("products").select("id", { count: "exact", head: true }).eq("status", "published"),
     db.from("order_clicks").select("id", { count: "exact", head: true }).gte("created_at", since30),
@@ -35,6 +36,7 @@ export default async function AdminOverview() {
     db.from("businesses").select("id, name, location, created_at").order("created_at", { ascending: false }).limit(5),
     db.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
     db.from("subscriptions").select("amount_kes, created_at").neq("status", "cancelled").gte("created_at", sixMonthsAgo.toISOString()).limit(5000),
+    pendingSignupIds(db),
   ]);
 
   // Latest end date per business, so a queued renewal does not show as "expiring".
@@ -76,6 +78,10 @@ export default async function AdminOverview() {
         <div className={styles.stat}><div className={styles.statNum}>{kes(thisMonth.total)}</div><div className={styles.statLabel}>Payments this month ({thisMonth.count})</div></div>
         <div className={styles.stat}><div className={styles.statNum}>{clicks.count ?? 0}</div><div className={styles.statLabel}>WhatsApp orders, 30 days</div></div>
         <div className={styles.stat}><div className={styles.statNum}>{prods.count ?? 0}</div><div className={styles.statLabel}>Live products</div></div>
+        <Link href="/admin/signups" className={styles.stat} style={{ textDecoration: "none" }}>
+          <div className={styles.statNum} style={pendingIds.length > 0 ? { color: "var(--color-ochre)" } : undefined}>{pendingIds.length}</div>
+          <div className={styles.statLabel}>Waiting for approval</div>
+        </Link>
         <Link href="/admin/reports" className={styles.stat} style={{ textDecoration: "none" }}>
           <div className={styles.statNum} style={(reports.count ?? 0) > 0 ? { color: "var(--color-danger)" } : undefined}>{reports.count ?? 0}</div>
           <div className={styles.statLabel}>Open reports</div>

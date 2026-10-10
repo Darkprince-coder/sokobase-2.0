@@ -5,7 +5,8 @@ import { adminDb, audit, done, fail, refreshPublic, slugify, type ActionState } 
 import { generateInviteCode } from "@/lib/invites";
 import { site } from "@/lib/site";
 import { isOwnImageUrl } from "@/lib/cloudinary";
-import { deleteFolderImages, deleteImages } from "@/lib/cloudinary-admin";
+import { purgeBusiness } from "@/lib/business-removal";
+import { emailHtml, sendEmail } from "@/lib/email";
 import { redirect } from "next/navigation";
 
 const uuid = z.string().uuid();
@@ -362,33 +363,95 @@ export async function deleteBusiness(_prev: ActionState, fd: FormData): Promise<
   const typed = String(fd.get("confirm_name") ?? "").trim().toLowerCase();
   if (typed !== b.name.trim().toLowerCase()) return { error: `Type the shop name exactly ("${b.name}") to confirm.`, field: "confirm_name" };
 
-  // Collect photo URLs before the rows disappear.
-  const [{ data: products }, { count: productCount }] = await Promise.all([
-    db.from("products").select("id, images").eq("business_id", b.id),
-    db.from("products").select("id", { count: "exact", head: true }).eq("business_id", b.id),
-  ]);
-  const productIds = (products ?? []).map((p) => p.id as string);
-  const { data: variants } = productIds.length
-    ? await db.from("product_variants").select("image_url").in("product_id", productIds)
-    : { data: [] as { image_url: string | null }[] };
-  const urls = [b.logo_url, b.cover_url, ...(products ?? []).flatMap((p) => (p.images as string[]) ?? []), ...(variants ?? []).map((v) => v.image_url)]
-    .filter((u): u is string => typeof u === "string" && u.length > 0);
-
-  // Record first: the audit row keeps the name after the business is gone.
-  await audit(db, user.id, "business.delete", { type: "business", id: b.id }, { name: b.name, slug: b.slug, products: productCount ?? 0, photos: urls.length });
-
-  // Deleting the business cascades to products, variants, subscriptions, categories, reports and clicks.
-  const { error } = await db.from("businesses").delete().eq("id", b.id);
-  if (error) return fail("Could not delete the shop. Nothing was removed.");
-  // The owner's login (and profile, via cascade). Their invite rows stay, unlinked, as history.
-  await db.auth.admin.deleteUser(b.owner_id).catch(() => null);
-
-  // Free Cloudinary storage (best effort; never blocks).
-  await deleteImages(urls);
-  await deleteFolderImages(`sokobase/shops/${b.id}/`);
+  const removed = await purgeBusiness(db, b);
+  if (!removed.ok) return fail("Could not delete the shop. Nothing was removed.");
+  // The audit row keeps the name after the business is gone.
+  await audit(db, user.id, "business.delete", { type: "business", id: b.id }, { name: b.name, slug: b.slug, products: removed.products, photos: removed.photos });
 
   refreshPublic();
   revalidatePath("/admin/businesses");
   revalidatePath("/admin");
   redirect(`/admin/businesses?deleted=${encodeURIComponent(b.name)}`);
+}
+
+// ---------- New sign-ups (open sign-up from the Sell page, see 0014) ----------
+const approveSchema = z.object({
+  business_id: uuid,
+  plan_id: uuid,
+  duration_days: z.coerce.number().int().min(1, "Duration must be at least 1 day").max(365),
+  amount_kes: z.coerce.number().int().min(0).max(1_000_000),
+  payment_note: z.string().trim().max(120).optional(),
+});
+
+async function pendingBusiness(db: Awaited<ReturnType<typeof adminDb>>["db"], id: string) {
+  const { data: b } = await db.from("businesses").select("id, name, slug, owner_id, logo_url, cover_url").eq("id", id).maybeSingle();
+  if (!b) return null;
+  const { count } = await db.from("subscriptions").select("id", { count: "exact", head: true }).eq("business_id", id);
+  return (count ?? 0) === 0 ? b : null;
+}
+
+async function ownerEmail(db: Awaited<ReturnType<typeof adminDb>>["db"], ownerId: string) {
+  const { data } = await db.auth.admin.getUserById(ownerId);
+  return data.user?.email ?? "";
+}
+
+// Approve = first subscription (free trial when the amount is 0, or what the seller paid).
+export async function approveSignup(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const { db, user } = await adminDb();
+  const parsed = approveSchema.safeParse(fields(fd));
+  if (!parsed.success) return fail(firstError(parsed.error));
+  const v = parsed.data;
+  const b = await pendingBusiness(db, v.business_id);
+  if (!b) return fail("This shop was already approved or no longer exists. Refresh the page.");
+
+  const starts = new Date();
+  const ends = new Date(starts.getTime() + v.duration_days * DAY);
+  const note = v.payment_note || (v.amount_kes === 0 ? `Free trial (${v.duration_days} days)` : null);
+  const { error } = await db.from("subscriptions").insert({
+    business_id: b.id, plan_id: v.plan_id, starts_at: starts.toISOString(), ends_at: ends.toISOString(),
+    payment_note: note, created_by: user.id, amount_kes: v.amount_kes,
+  });
+  if (error) return fail("Could not approve the shop. Try again.");
+  await audit(db, user.id, "business.approve", { type: "business", id: b.id },
+    { name: b.name, plan_id: v.plan_id, duration_days: v.duration_days, amount_kes: v.amount_kes, ends_at: ends.toISOString() });
+
+  const { data: plan } = await db.from("plans").select("name").eq("id", v.plan_id).maybeSingle();
+  const endsText = ends.toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" });
+  const to = await ownerEmail(db, b.owner_id);
+  await sendEmail(to, `Your shop ${b.name} is live on SokoBase`, emailHtml({
+    heading: "Your shop is live!",
+    paragraphs: [
+      `Good news: SokoBase has approved ${b.name}. Customers can now find your shop and order from you on WhatsApp.`,
+      `Plan: ${plan?.name ?? "SokoBase"}${v.amount_kes === 0 ? " (free trial)" : ""}, active until ${endsText}.`,
+      `Share your shop link everywhere: ${site.url}/store/${b.slug}`,
+    ],
+    button: { label: "Open my dashboard", href: `${site.portalUrl}/dashboard` },
+  }));
+
+  refreshPublic();
+  revalidatePath("/admin", "layout");
+  return done(`${b.name} is live until ${endsText}.${to ? " We emailed the owner." : ""}`);
+}
+
+// Reject = remove the shop, its login and photos. Optionally tell the applicant.
+export async function rejectSignup(fd: FormData) {
+  const { db, user } = await adminDb();
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  const b = await pendingBusiness(db, id.data);
+  if (!b) return;
+  const to = fd.get("notify") === "1" ? await ownerEmail(db, b.owner_id) : "";
+  const removed = await purgeBusiness(db, b);
+  if (!removed.ok) return;
+  await audit(db, user.id, "business.reject", { type: "business", id: b.id }, { name: b.name, slug: b.slug, products: removed.products, photos: removed.photos });
+  if (to) {
+    await sendEmail(to, "About your SokoBase sign-up", emailHtml({
+      heading: "We couldn't approve your shop",
+      paragraphs: [
+        `Thank you for signing up ${b.name} on SokoBase. We weren't able to approve the shop this time, so it has been removed.`,
+        "If you think this is a mistake, or you'd like to try again, please message us on WhatsApp and we'll help you get set up.",
+      ],
+    }));
+  }
+  revalidatePath("/admin", "layout");
 }

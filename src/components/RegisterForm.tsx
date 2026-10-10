@@ -4,8 +4,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Button from "./Button";
 import LogoUpload from "./LogoUpload";
+import Turnstile from "./Turnstile";
 import { registerBusiness } from "@/app/join/actions";
-import type { ActionState } from "@/lib/action-state";
+import { signUpBusiness, type SignupState } from "@/app/signup/actions";
 import styles from "./RegisterForm.module.css";
 import { keepFormSubmit } from "@/lib/keep-form";
 
@@ -13,8 +14,11 @@ type Category = { id: string; name: string };
 type County = { id: string; name: string };
 const MAX_CATEGORIES = 3;
 
-export default function RegisterForm({ code, categories, counties }: { code: string; categories: Category[]; counties: County[] }) {
-  const [state, action, pending] = useActionState<ActionState, FormData>(registerBusiness, {});
+// Two modes: with an invite code (/join, plan already paid or agreed) or open sign-up (/signup,
+// shop waits for approval; the logo is added later from the dashboard).
+export default function RegisterForm({ code, plan, categories, counties }: { code?: string; plan?: string; categories: Category[]; counties: County[] }) {
+  const open = !code;
+  const [state, action, pending] = useActionState<SignupState, FormData>((open ? signUpBusiness : registerBusiness) as (s: SignupState, fd: FormData) => Promise<SignupState>, {});
   const [logoUrl, setLogoUrl] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
@@ -25,19 +29,35 @@ export default function RegisterForm({ code, categories, counties }: { code: str
 
   return (
     <form onSubmit={keepFormSubmit(action)} className={styles.form} noValidate>
-      <input type="hidden" name="invite_code" value={code} />
+      {code && <input type="hidden" name="invite_code" value={code} />}
+      {plan && <input type="hidden" name="plan" value={plan} />}
       <input type="hidden" name="logo_url" value={logoUrl} />
+      {open && (
+        // Spam trap: hidden from people (and screen readers); bots fill it in.
+        <div aria-hidden="true" style={{ position: "absolute", left: "-10000px", width: 1, height: 1, overflow: "hidden" }}>
+          <label>Company website<input type="text" name="company_website" tabIndex={-1} autoComplete="off" /></label>
+        </div>
+      )}
       <input type="hidden" name="category_ids" value={JSON.stringify(categoryIds)} />
 
-      <div className={styles.field}>
-        <span>Business logo</span>
-        <LogoUpload value={logoUrl} onChange={setLogoUrl} inviteCode={code} />
-      </div>
+      {code && (
+        <div className={styles.field}>
+          <span>Business logo</span>
+          <LogoUpload value={logoUrl} onChange={setLogoUrl} inviteCode={code} />
+        </div>
+      )}
 
       <label className={styles.field}>
         <span>Business name</span>
         <input type="text" name="name" maxLength={80} required autoComplete="organization" />
       </label>
+
+      {open && (
+        <label className={styles.field}>
+          <span>Your name</span>
+          <input type="text" name="owner_name" maxLength={80} required autoComplete="name" />
+        </label>
+      )}
 
       <div className={styles.field}>
         <span>Categories <span className={styles.hint}>(choose up to {MAX_CATEGORIES})</span></span>
@@ -95,6 +115,8 @@ export default function RegisterForm({ code, categories, counties }: { code: str
           <input type={showPw ? "text" : "password"} name="confirm_password" autoComplete="new-password" minLength={10} required />
         </label>
       </div>
+
+      {open && <Turnstile resetKey={state.attempt} />}
 
       <AnimatePresence>
         {state.error && (

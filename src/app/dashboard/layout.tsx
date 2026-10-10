@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Hourglass } from "lucide-react";
 import Logo from "@/components/Logo";
 import DashNav from "@/components/dashboard/DashNav";
 import DashTabBar from "@/components/dashboard/DashTabBar";
@@ -22,6 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const contact = business && site.supportWhatsapp
     ? whatsappLink(site.supportWhatsapp, visibility === "expired"
       ? `Hi SokoBase, I'd like to renew the ${usage?.planName ?? ""} plan for ${business.name}.`
+      : visibility === "pending" ? `Hi SokoBase, I've signed up my shop ${business.name} and it's waiting for approval.`
       : `Hi SokoBase, I need help with my shop ${business.name}.`)
     : null;
 
@@ -45,6 +46,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div className={styles.warnBanner} role="status">
             <AlertTriangle size={18} aria-hidden="true" />
             <span><strong>Your shop is paused by SokoBase</strong> and customers can&apos;t see it. Your products are saved.{contact ? <> <a href={contact} target="_blank" rel="noopener noreferrer">Message us on WhatsApp</a>.</> : " Contact SokoBase for help."}</span>
+          </div>
+        ) : business && visibility === "pending" ? (
+          <div className={styles.infoBanner} role="status">
+            <Hourglass size={18} aria-hidden="true" />
+            <span><strong>Your shop is waiting for approval.</strong> Customers can&apos;t see it yet. Add up to 10 products now so it&apos;s ready to go live. We&apos;ll email you once SokoBase approves it, usually within a day.{contact ? <> <a href={contact} target="_blank" rel="noopener noreferrer">Message us</a>.</> : ""}</span>
           </div>
         ) : business && usage && banner(usage, business.name)}
         {children}

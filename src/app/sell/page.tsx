@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Check, Link2, MessageCircle, PackagePlus, Smartphone, Store } from "lucide-react";
+import { ArrowRight, BadgeCheck, Check, Link2, MessageCircle, PackagePlus, Smartphone, Store } from "lucide-react";
 import Button from "@/components/Button";
 import { getPlans } from "@/lib/catalog";
 import { formatKes } from "@/lib/format";
@@ -16,13 +16,14 @@ export const metadata: Metadata = {
 };
 
 const steps = [
-  { icon: MessageCircle, title: "Message us on WhatsApp", text: "Tell us about your business and pick a plan. Pay by M-Pesa." },
-  { icon: Store, title: "Set up your shop", text: "We send you a private sign-up link. Add your logo, county and WhatsApp number." },
-  { icon: PackagePlus, title: "Post your products", text: "Add photos, prices, sizes and colours from your phone in minutes." },
+  { icon: Store, title: "Create your shop", text: "Sign up in about two minutes with your business name, location and WhatsApp number." },
+  { icon: PackagePlus, title: "Add your products", text: "Add photos, prices, sizes and colours from your phone straight away, up to 10 while we review your shop." },
+  { icon: BadgeCheck, title: "We approve, you go live", text: "SokoBase checks every new shop and agrees your plan with you, usually within a day." },
   { icon: Link2, title: "Share one link", text: "Put your shop link on WhatsApp status, Instagram, TikTok and flyers. Orders come straight to your WhatsApp." },
 ];
 
 const faqs = [
+  { q: "Is it free to sign up?", a: "Yes. Creating your shop and adding your first products is free. When we approve your shop, we agree your plan with you before it goes live." },
   { q: "Do customers pay through SokoBase?", a: "No. Customers tap Order on WhatsApp and chat with you directly. You agree on price, payment and delivery yourself, so you keep 100% of every sale." },
   { q: "Do I need a website or technical skills?", a: "No. If you can use WhatsApp, you can run your SokoBase shop. Everything works from your phone." },
   { q: "What happens when my plan ends?", a: "We remind you before it ends. Your shop stays visible for a short grace period, and renewing by M-Pesa keeps everything exactly as it was." },
@@ -32,6 +33,7 @@ const faqs = [
 export default async function SellPage() {
   const plans = await getPlans();
   const chat = sellWhatsappLink();
+  const signup = `${site.portalUrl}/signup`;
 
   return (
     <div className={styles.page}>
@@ -40,7 +42,10 @@ export default async function SellPage() {
           <p className={styles.kicker}>For Kenyan businesses</p>
           <h1>Your shop online. One link. Orders on WhatsApp.</h1>
           <p className={styles.lead}>No website to build, no commission on sales. List your products on {site.name} and let customers across Kenya find you and order directly.</p>
-          {chat && <Button href={chat} external variant="accent" size="lg" icon={<MessageCircle size={20} />}>Talk to us on WhatsApp</Button>}
+          <div className={styles.actions}>
+            <Button href={signup} variant="accent" size="lg" icon={<ArrowRight size={20} />}>Start selling</Button>
+            {chat && <Button href={chat} external variant="ghost" size="lg" icon={<MessageCircle size={20} />}>Questions? WhatsApp us</Button>}
+          </div>
         </div>
         <ul className={styles.perks}>
           <li><Check size={18} aria-hidden="true" />Your own shop page: sokobase.co.ke/store/your-name</li>
@@ -69,7 +74,7 @@ export default async function SellPage() {
           <h2 id="plans" className={styles.h2}>Plans</h2>
           <div className={styles.plans}>
             {plans.map((p, i) => {
-              const link = sellWhatsappLink(p.name);
+              const link = `${signup}?plan=${encodeURIComponent(p.slug)}`;
               const featured = plans.length > 2 && i === 1;
               return (
                 <article key={p.id} className={featured ? `${styles.plan} ${styles.featured}` : styles.plan}>
@@ -84,7 +89,7 @@ export default async function SellPage() {
                     <li><Check size={16} aria-hidden="true" />WhatsApp ordering</li>
                     <li><Check size={16} aria-hidden="true" />Sizes, colours and options</li>
                   </ul>
-                  {link && <Button href={link} external variant={featured ? "primary" : "outline"} fullWidth>Choose {p.name}</Button>}
+                  <Button href={link} variant={featured ? "primary" : "outline"} fullWidth>Choose {p.name}</Button>
                 </article>
               );
             })}
@@ -109,9 +114,9 @@ export default async function SellPage() {
           <Smartphone size={28} aria-hidden="true" />
           <div>
             <h2>Ready to start selling?</h2>
-            <p>Message us and your shop can be live today.</p>
+            <p>Create your shop now and add your first products today.</p>
           </div>
-          {chat && <Button href={chat} external variant="accent" size="lg" icon={<MessageCircle size={20} />}>Get started</Button>}
+          <Button href={signup} variant="accent" size="lg" icon={<ArrowRight size={20} />}>Start selling</Button>
         </div>
       </section>
     </div>

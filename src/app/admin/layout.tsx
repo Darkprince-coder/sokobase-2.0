@@ -3,6 +3,8 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import AdminNav from "@/components/admin/AdminNav";
 import { requireSuperAdmin } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { pendingSignupIds } from "@/lib/signups";
 import { signOut } from "@/app/login/actions";
 import styles from "@/components/admin/admin.module.css";
 import { portalAppMetadata, portalViewport } from "@/lib/portal-app";
@@ -12,11 +14,12 @@ export const viewport = portalViewport;
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user } = await requireSuperAdmin();
+  const pending = (await pendingSignupIds(createAdminClient())).length;
   return (
     <div className={styles.shell}>
       <aside className={styles.side}>
         <div className={styles.brand}><Logo size={30} tone="light" /><span className={styles.tag}>Admin</span></div>
-        <AdminNav />
+        <AdminNav pendingSignups={pending} />
         <div className={styles.sideFoot}>
           <span className={styles.userMail}>{user.email}</span>
           <Link href="/">View site</Link>
