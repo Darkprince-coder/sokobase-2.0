@@ -430,7 +430,8 @@ export async function approveSignup(_prev: ActionState, fd: FormData): Promise<A
 
   refreshPublic();
   revalidatePath("/admin", "layout");
-  return done(`${b.name} is live until ${endsText}.${to ? " We emailed the owner." : ""}`);
+  // The approved shop leaves the list, so confirm at the top of the page instead of inside its card.
+  redirect(`/admin/signups?done=${encodeURIComponent(`${b.name} is live until ${endsText}.${to ? " We emailed the owner." : ""}`)}`);
 }
 
 // Reject = remove the shop, its login and photos. Optionally tell the applicant.
@@ -454,4 +455,5 @@ export async function rejectSignup(fd: FormData) {
     }));
   }
   revalidatePath("/admin", "layout");
+  redirect(`/admin/signups?done=${encodeURIComponent(`${b.name} was rejected and removed.${to ? " We emailed the owner." : ""}`)}`);
 }

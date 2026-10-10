@@ -14,7 +14,8 @@ export const metadata: Metadata = { title: "New sign-ups" };
 
 const DAY = 86400000;
 
-export default async function SignupsPage() {
+export default async function SignupsPage({ searchParams }: { searchParams: Promise<{ done?: string }> }) {
+  const doneMsg = ((await searchParams).done ?? "").slice(0, 200);
   const { db } = await adminDb();
   const [signups, { data: plans }] = await Promise.all([
     getPendingSignups(db),
@@ -32,6 +33,8 @@ export default async function SignupsPage() {
           Approving with KSh 0 gives a free trial; enter the amount if they paid. Sign-ups with no products are removed after {ABANDONED_AFTER_DAYS} days.
         </p>
       </header>
+
+      {doneMsg && <p role="status" className={styles.msgOk} style={{ marginBottom: 14 }}>✓ {doneMsg}</p>}
 
       {signups.length === 0 ? (
         <section className={styles.panel}><p className={styles.empty}>No shops waiting for approval.</p></section>
