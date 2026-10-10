@@ -30,9 +30,9 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
       title="Start selling on SokoBase"
       text="Create your shop in about two minutes and start adding products straight away. SokoBase checks every new shop before customers can see it, usually within a day."
     >
-      {plan && <p className={styles.meta} style={{ marginBottom: -4 }}>Plan you chose: <strong>{plan.name}</strong>. We confirm it with you when we approve your shop.</p>}
+      {plan && <p className={styles.meta} style={{ display: "block", marginBottom: -4 }}>Plan you chose: <strong>{plan.name}</strong>. We confirm it with you when we approve your shop.</p>}
       <RegisterForm plan={plan?.slug} categories={categories ?? []} counties={counties ?? []} />
-      <p className={styles.meta} style={{ textAlign: "center" }}>Already have a shop? <Link href="/login">Sign in</Link></p>
+      <p className={styles.meta} style={{ display: "block", textAlign: "center" }}>Already have a shop? <Link href="/login">Sign in</Link></p>
     </AuthCard>
   );
 }
