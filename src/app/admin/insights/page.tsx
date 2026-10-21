@@ -70,7 +70,7 @@ export default async function PlatformInsightsPage({ searchParams }: { searchPar
       <header className={admin.head} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
         <div>
           <h1>Insights</h1>
-          <p className={admin.sub}>How SokoBase is growing, earning and serving buyers. Views count once per visitor per page per day; counting started on 21 Oct 2026.</p>
+          <p className={admin.sub}>How SokoBase is growing, earning and serving buyers. Views count once per visitor per page per day{d.viewsSince ? `; counted since ${new Date(`${d.viewsSince}T12:00:00Z`).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}` : ""}.</p>
         </div>
         <nav className={styles.ranges} aria-label="Time range">
           {RANGES.map((r) => (
@@ -183,8 +183,15 @@ export default async function PlatformInsightsPage({ searchParams }: { searchPar
           {a.pending > 0 && <> · <Link href="/admin/signups">{a.pending} sign-up{a.pending === 1 ? "" : "s"} waiting</Link></>}
         </p>
         <div className={styles.charts}>
-          <ShopList title={`No views in ${days} days`} hint="Nobody opened their shop or products. They need to share their link." shops={a.noViews}
-            message={(s: S) => `Hi, this is SokoBase. Your shop ${s.name} hasn't had visitors lately. Share your link on WhatsApp Status to bring customers: ${shopLink(s.slug)}`} />
+          {d.viewsCoverRange ? (
+            <ShopList title={`No views in ${days} days`} hint="Nobody opened their shop or products. They need to share their link." shops={a.noViews}
+              message={(s: S) => `Hi, this is SokoBase. Your shop ${s.name} hasn't had visitors lately. Share your link on WhatsApp Status to bring customers: ${shopLink(s.slug)}`} />
+          ) : (
+            <div>
+              <h3 style={{ fontSize: 15, marginBottom: 2 }}>No views in {days} days</h3>
+              <p className={admin.sub} style={{ marginTop: 0 }}>Shows up once views have been counted for the whole {days} days{d.viewsSince ? "" : " (counting starts when the latest update is live)"}. Try a shorter range.</p>
+            </div>
+          )}
           <ShopList title="Fewer than 3 products" hint="Shops with more products get far more orders." shops={a.fewProducts}
             message={(s: S) => `Hi, this is SokoBase. Customers love choice: add a few more products to ${s.name} and you'll get more orders. Need help? Reply here.`} />
           <ShopList title="No product updates in 30 days" hint="Prices and stock may be out of date." shops={a.stale}

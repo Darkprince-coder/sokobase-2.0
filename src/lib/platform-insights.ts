@@ -49,7 +49,7 @@ export async function getPlatformInsights(days: Range) {
   const now = Date.now();
   const t0 = nairobiMidnight(from), t1 = nairobiMidnight(addDays(to, 1)), p0 = nairobiMidnight(prevFrom);
 
-  const [cur, prev, subs, shops, pending, { count: openReports }] = await Promise.all([
+  const [cur, prev, subs, shops, pending, { count: openReports }, { data: firstView }] = await Promise.all([
     raw(db, from, to),
     raw(db, prevFrom, prevTo),
     all<Sub>((a, b) => db.from("subscriptions").select("business_id, status, starts_at, ends_at, amount_kes, created_at").order("created_at").range(a, b)),
@@ -57,7 +57,11 @@ export async function getPlatformInsights(days: Range) {
       db.from("businesses").select("id, name, slug, status, whatsapp, created_at").order("created_at").range(a, b)),
     pendingSignupIds(db),
     db.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
+    db.from("page_views").select("viewed_on").order("viewed_on").limit(1).maybeSingle(),
   ]);
+  // Views are only known from the first counted day; "no views" needs the whole period covered.
+  const viewsSince = (firstView?.viewed_on as string | undefined) ?? null;
+  const viewsCoverRange = !!viewsSince && viewsSince <= from;
 
   const activeShops = new Set(shops.filter((s) => s.status === "active").map((s) => s.id));
   const liveNow = [...liveAt(subs, now)].filter((id) => activeShops.has(id));
@@ -91,7 +95,7 @@ export async function getPlatformInsights(days: Range) {
   const monthAgo = now - 30 * DAY;
 
   return {
-    days, from, to,
+    days, from, to, viewsSince, viewsCoverRange,
     growth: {
       liveNow: liveNow.length,
       liveStart: [...liveAt(subs, t0)].filter((id) => activeShops.has(id)).length,

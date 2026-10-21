@@ -57,7 +57,7 @@ export default function DailyBars({ title, data, color, unit, period = "day", mo
       <details className={styles.tableToggle}>
         <summary>Show as table</summary>
         <table className={styles.table}>
-          <thead><tr><th scope="col">{period === "month" ? "Month" : period === "week" ? "Week" : "Day"}</th><th scope="col">{unit[1][0].toUpperCase() + unit[1].slice(1)}</th></tr></thead>
+          <thead><tr><th scope="col">{period === "month" ? "Month" : period === "week" ? "Week" : "Day"}</th><th scope="col">{money ? "Amount (KSh)" : unit[1].charAt(0).toUpperCase() + unit[1].slice(1)}</th></tr></thead>
           <tbody>{data.map((d) => <tr key={d.day}><td>{label(d.day, true, period)}</td><td>{d.value.toLocaleString("en-KE")}</td></tr>)}</tbody>
         </table>
       </details>
