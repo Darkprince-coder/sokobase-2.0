@@ -57,3 +57,5 @@
 
 .empty { text-align: center; padding: 26px 12px; color: var(--ink-2); display: grid; gap: 8px; justify-items: center; }
 .weekly { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.more summary { cursor: pointer; color: var(--color-primary); font-weight: 600; font-size: 14px; padding: 12px 8px 4px; }
+.more .products td:first-child { width: 100%; }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Lightbulb, Share2 } from "lucide-react";
 import { requireBusiness } from "@/lib/auth";
-import { change, getInsights, RANGES, type Range, type Totals } from "@/lib/insights";
+import { change, getInsights, RANGES, type ProductInsight, type Range, type Totals } from "@/lib/insights";
 import { SOURCE_LABELS } from "@/lib/insights-source";
 import { site } from "@/lib/site";
 import { setWeeklyReport } from "@/app/dashboard/actions";
@@ -30,6 +30,29 @@ function Kpi({ label, now, before, days, isRate }: { label: string; now: number;
         </span>
       )}
     </div>
+  );
+}
+
+const TOP = 10;
+
+function productRow(p: ProductInsight) {
+  return (
+                  <tr key={p.id}>
+                    <td>
+                      <div className={styles.productCell}>
+                        {p.image ? <Image src={`${p.image}#fill`} alt="" width={40} height={40} /> : <span className={styles.noImg} aria-hidden="true" />}
+                        <div style={{ minWidth: 0 }}>
+                          {p.status === "published"
+                            ? <a className={styles.productName} href={`${site.url}/products/${p.slug}`} target="_blank" rel="noopener noreferrer">{p.name}</a>
+                            : <span className={styles.productName}>{p.name}</span>}
+                          {p.status !== "published" && <span className={styles.tag}>Draft</span>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className={styles.num}>{fmt(p.views)}</td>
+                    <td className={styles.num}>{fmt(p.clicks)}</td>
+                    <td className={styles.num}>{rate(p.clicks, p.views)}</td>
+                  </tr>
   );
 }
 
@@ -139,26 +162,15 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
             <table className={styles.products}>
               <thead><tr><th scope="col">Product</th><th scope="col" className={styles.num}>Views</th><th scope="col" className={styles.num}>Order taps</th><th scope="col" className={styles.num}>Rate</th></tr></thead>
               <tbody>
-                {d.products.map((p) => (
-                  <tr key={p.id}>
-                    <td>
-                      <div className={styles.productCell}>
-                        {p.image ? <Image src={`${p.image}#fill`} alt="" width={40} height={40} /> : <span className={styles.noImg} aria-hidden="true" />}
-                        <div style={{ minWidth: 0 }}>
-                          {p.status === "published"
-                            ? <a className={styles.productName} href={`${site.url}/products/${p.slug}`} target="_blank" rel="noopener noreferrer">{p.name}</a>
-                            : <span className={styles.productName}>{p.name}</span>}
-                          {p.status !== "published" && <span className={styles.tag}>Draft</span>}
-                        </div>
-                      </div>
-                    </td>
-                    <td className={styles.num}>{fmt(p.views)}</td>
-                    <td className={styles.num}>{fmt(p.clicks)}</td>
-                    <td className={styles.num}>{rate(p.clicks, p.views)}</td>
-                  </tr>
-                ))}
+                {d.products.slice(0, TOP).map(productRow)}
               </tbody>
             </table>
+            {d.products.length > TOP && (
+              <details className={styles.more}>
+                <summary>Show all {d.products.length} products</summary>
+                <table className={styles.products}><tbody>{d.products.slice(TOP).map(productRow)}</tbody></table>
+              </details>
+            )}
           </div>
         )}
       </section>

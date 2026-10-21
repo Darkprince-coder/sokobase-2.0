@@ -1,19 +1,25 @@
 "use client";
 import { useEffect } from "react";
 
-const LANDED_KEY = "sb-landed";
+export const LANDING_KEY = "sb-landing";
+const here = () => window.location.pathname;
+
+/** Remembers the first SokoBase page opened in this tab (called by SiteChrome and ViewTracker). */
+export function rememberLanding() {
+  try { if (!sessionStorage.getItem(LANDING_KEY)) sessionStorage.setItem(LANDING_KEY, here()); } catch {}
+}
 
 // Counts this page view for the seller's Insights (see /api/view). Fire-and-forget, after the page
-// is interactive. The first page of a visit reports where the visitor came from; later pages in the
-// same tab count as "browsing SokoBase" (client navigation keeps the original referrer).
+// is interactive. The page a visit starts on reports where the visitor came from; any other page in
+// the same tab counts as "browsing SokoBase" (client navigation keeps the original referrer).
+// Comparing with the landing page (rather than "has anything run before") does not depend on the
+// order in which effects run, which differs when parts of a page stream in later.
 export default function ViewTracker({ businessId, productId }: { businessId: string; productId?: string }) {
   useEffect(() => {
     if (!businessId) return;
+    rememberLanding();
     let internal = false;
-    try {
-      internal = sessionStorage.getItem(LANDED_KEY) === "1";
-      sessionStorage.setItem(LANDED_KEY, "1");
-    } catch {}
+    try { internal = sessionStorage.getItem(LANDING_KEY) !== here(); } catch {}
     const src = new URLSearchParams(window.location.search).get("src") ?? undefined;
     const send = () => {
       fetch("/api/view", {
