@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { CheckCircle2, Package, FileEdit, MessageCircle, Store } from "lucide-react";
+import { BarChart3, CheckCircle2, ChevronRight, Package, FileEdit, MessageCircle, Store } from "lucide-react";
 import { requireBusiness } from "@/lib/auth";
 import { getPlanUsage, getOrderClicks30, shopVisibility } from "@/lib/dashboard";
+import { getInsights } from "@/lib/insights";
 import ViewShopLink from "@/components/dashboard/ViewShopLink";
 import InstallBizApp from "@/components/dashboard/InstallBizApp";
 import { formatDate } from "@/lib/dates";
@@ -23,13 +24,15 @@ export default async function DashboardOverview() {
     );
   }
 
-  const [usage, { count: published }, clicks30, { data: profile }, { count: withPhotos }] = await Promise.all([
+  const [usage, { count: published }, clicks30, { data: profile }, { count: withPhotos }, week] = await Promise.all([
     getPlanUsage(supabase, business.id),
     supabase.from("products").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("status", "published"),
     getOrderClicks30(business.id),
     supabase.from("businesses").select("description, logo_url, cover_url").eq("id", business.id).maybeSingle(),
     supabase.from("products").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("status", "published").neq("images", "{}"),
+    getInsights(business.id, 7),
   ]);
+  const weekViews = week.now.shopViews + week.now.productViews;
   const shopUrl = `${site.url}/store/${business.slug}`;
 
   // Getting-started checklist: shown until every step is done.
@@ -54,6 +57,12 @@ export default async function DashboardOverview() {
       </header>
 
       <InstallBizApp />
+
+      <Link href="/dashboard/insights" className={styles.insightCard}>
+        <BarChart3 size={20} aria-hidden="true" />
+        <span><strong>This week:</strong> {weekViews.toLocaleString("en-KE")} visit{weekViews === 1 ? "" : "s"} · {week.now.clicks.toLocaleString("en-KE")} WhatsApp order tap{week.now.clicks === 1 ? "" : "s"}</span>
+        <span className={styles.insightMore}>See insights <ChevronRight size={16} aria-hidden="true" /></span>
+      </Link>
 
       <div className={styles.stats}>
         <div className={styles.stat}><span className={styles.statIcon}><Package size={18} /></span><div><div className={styles.statNum}>{published ?? 0}</div><div className={styles.statLabel}>Published</div></div></div>

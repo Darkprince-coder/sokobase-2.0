@@ -38,7 +38,7 @@ async function anonymousChecks() {
   const requested = await db.from("businesses").select("requested_plan_id").limit(1);
   record("Visitors cannot read a shop's requested plan", denied(requested), why(requested, "requested_plan_id was readable"));
 
-  for (const table of ["invites", "order_clicks", "reports", "admin_audit_log", "profiles", "subscriptions", "signup_attempts"]) {
+  for (const table of ["invites", "order_clicks", "reports", "admin_audit_log", "profiles", "subscriptions", "signup_attempts", "page_views"]) {
     const r = await db.from(table).select("*").limit(1);
     record(`Visitors cannot read ${table}`, blocked(r), why(r, `${r.data?.length ?? 0} row(s) returned`));
   }
@@ -65,6 +65,7 @@ async function anonymousChecks() {
     ["save_product", { p_id: null, p_business_id: FAKE_ID, p_slug: "x", p_fields: {}, p_variants: [] }],
     ["set_business_categories", { p_business_id: FAKE_ID, p_category_ids: [FAKE_ID] }],
     ["my_business_id", {}],
+    ["shop_insights", { p_business_id: FAKE_ID, p_from: "2026-01-01", p_to: "2026-01-02" }],
   ]) {
     const r = await db.rpc(fn, args);
     record(`Visitors cannot call ${fn}()`, denied(r), why(r, "call succeeded"));

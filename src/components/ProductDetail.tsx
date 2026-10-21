@@ -14,6 +14,7 @@ import { logOrderClick } from "@/lib/track";
 import { defaultSelection, findVariant, groupsForDisplay, isColourGroup, photoGroupOf, priceRange, swatchFor, valueState, type Attributes } from "@/lib/variants";
 import type { ProductDetail as PD } from "@/lib/catalog";
 import styles from "./ProductDetail.module.css";
+import ViewTracker from "./ViewTracker";
 
 export default function ProductDetail({ product }: { product: PD }) {
   const { has, toggle } = useWishlist();
@@ -74,6 +75,7 @@ export default function ProductDetail({ product }: { product: PD }) {
 
   return (
     <div className={styles.layout}>
+      <ViewTracker businessId={product.businessId} productId={product.id} />
       {/* Gallery + buy box share their own block, so the sticky buy box stops at the details below. */}
       <div className={styles.top}>
       <div className={styles.left}>

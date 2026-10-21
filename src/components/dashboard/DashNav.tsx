@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Store, Package, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Store, Package, ShieldCheck, BarChart3 } from "lucide-react";
 import styles from "./dash.module.css";
 
 const ITEMS = [
   { href: "/dashboard", label: "Overview", Icon: LayoutDashboard },
   { href: "/dashboard/profile", label: "Shop profile", Icon: Store },
   { href: "/dashboard/products", label: "Products", Icon: Package },
+  { href: "/dashboard/insights", label: "Insights", Icon: BarChart3 },
   { href: "/dashboard/security", label: "Security", Icon: ShieldCheck },
 ];
 

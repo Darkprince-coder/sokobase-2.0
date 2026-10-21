@@ -168,3 +168,9 @@ a.checkItem:hover { border-color: var(--color-primary); }
   .content { padding-bottom: 96px; }
 }
 @media (min-width: 900px) { .tabBar { display: none; } }
+
+/* Dashboard home: link to Insights */
+.insightCard { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 18px; color: var(--ink); text-decoration: none; font-size: 14px; }
+.insightCard > svg { color: var(--color-primary); flex-shrink: 0; }
+.insightCard:hover { border-color: var(--color-primary); }
+.insightMore { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; color: var(--color-primary); font-weight: 600; font-size: 13.5px; }

@@ -217,3 +217,10 @@ export async function changePassword(_prev: ActionState, fd: FormData): Promise<
   if (error) return fail("Could not update the password. Try again.");
   return done("Password updated.");
 }
+
+// ---------- Insights ----------
+export async function setWeeklyReport(fd: FormData) {
+  const { db, business } = await bizDb();
+  await db.from("businesses").update({ weekly_report: fd.get("on") === "1" }).eq("id", business.id);
+  revalidatePath("/dashboard/insights");
+}

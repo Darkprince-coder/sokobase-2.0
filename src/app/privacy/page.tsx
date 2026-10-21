@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <InfoPage title="Privacy Policy" updated="5 October 2026"
+    <InfoPage title="Privacy Policy" updated="21 October 2026"
       intro={`This policy explains what personal data ${site.legalName} ("SokoBase", "we") collects, why, and the choices you have. We follow the Kenya Data Protection Act, 2019.`}>
       <h2>Who this applies to</h2>
       <p><strong>Shoppers</strong> who browse sokobase.co.ke, and <strong>businesses</strong> that list products on SokoBase. SokoBase is a listing platform: when you order, you deal directly with the business on WhatsApp.</p>
@@ -22,6 +22,7 @@ export default function PrivacyPage() {
         <li><strong>No account is needed.</strong> We do not ask for your name, phone number or email to browse or order.</li>
         <li><strong>Saved items</strong> are stored only on your own device (in your browser). We never receive them.</li>
         <li><strong>Order taps:</strong> when you tap &ldquo;Order on WhatsApp&rdquo; we record which product and shop, the time, and an anonymous code made by scrambling your IP address and browser details. This code changes every day and cannot be turned back into your IP address. We use it only to count orders fairly and stop abuse.</li>
+        <li><strong>Page views:</strong> when you open a product or shop page we count the view once per day, with the same anonymous daily code and a rough note of where you came from (for example Google, social media or a shared link). Shops see only totals, never who viewed.</li>
         <li><strong>Reports:</strong> if you report a listing we keep what you write and, only if you choose to give it, a phone number or email so we can follow up.</li>
         <li><strong>Analytics:</strong> we use Google Analytics to understand which pages are used, which sets cookies in your browser. You can block these cookies in your browser settings without affecting how the site works.</li>
         <li><strong>WhatsApp conversations</strong> happen in WhatsApp, between you and the business. SokoBase does not see them. WhatsApp&rsquo;s own privacy policy applies.</li>
@@ -32,7 +33,7 @@ export default function PrivacyPage() {
         <li>Account details: email address and password (stored securely as a one-way hash; we can never see it).</li>
         <li>Shop details you publish: business name, description, logo and photos, county and location, WhatsApp number, categories and product listings. These are <strong>public</strong> by design.</li>
         <li>Subscription records: plan, dates, amount paid and M-Pesa transaction codes you share with us.</li>
-        <li>Order-tap counts for your shop (anonymous, as described above).</li>
+        <li>Order-tap and page-view counts for your shop (anonymous, as described above).</li>
       </ul>
 
       <h2>Why we use it</h2>

@@ -1,0 +1,59 @@
+/* Seller Insights. Charts follow the dataviz spec: one series per chart, thin bars (<=24px) with
+   4px rounded ends square at the baseline, 2px gaps, hairline recessive grid, text in ink tokens. */
+.ranges { display: inline-flex; gap: 4px; padding: 4px; background: var(--white); border: 1px solid var(--line); border-radius: 999px; }
+.range { padding: 7px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); text-decoration: none; }
+.rangeOn { background: var(--color-primary); color: #fff; }
+
+.kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 18px; }
+@media (min-width: 900px) { .kpis { grid-template-columns: repeat(4, 1fr); } }
+.kpi { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 14px; display: grid; gap: 4px; }
+.kpiLabel { font-size: 13px; color: var(--ink-3); }
+.kpiNum { font-family: var(--font-mono); font-weight: 600; font-size: 26px; line-height: 1.1; color: var(--ink); }
+.kpiChange { font-size: 12.5px; color: var(--ink-3); }
+.up { color: var(--color-primary-dark); font-weight: 600; }
+.down { color: var(--color-danger, #b3261e); font-weight: 600; }
+
+.charts { display: grid; gap: 18px; }
+@media (min-width: 900px) { .charts { grid-template-columns: 1fr 1fr; } }
+.chart { margin: 0; }
+.chartTitle { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+.plot { display: grid; grid-template-columns: auto 1fr; gap: 8px; height: 170px; }
+.yAxis { display: flex; flex-direction: column; justify-content: space-between; font-size: 11.5px; color: var(--ink-3); text-align: right; font-family: var(--font-mono); transform: translateY(-0.5em); padding-bottom: 0; }
+.area { position: relative; }
+.grid { position: absolute; left: 0; right: 0; height: 1px; background: var(--line); }
+.bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 2px; }
+.slot { flex: 1; height: 100%; display: flex; align-items: flex-end; justify-content: center; cursor: pointer; outline: 0; min-width: 0; }
+.slot:focus-visible .bar { box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--ink); }
+.bar { width: 100%; max-width: 24px; min-height: 0; border-radius: 4px 4px 0 0; transition: opacity 0.15s; }
+.tip { position: absolute; top: -6px; transform: translate(-50%, -100%); background: var(--ink); color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 12.5px; white-space: nowrap; pointer-events: none; display: grid; gap: 1px; z-index: 2; }
+.tip span { color: #c9d5cf; font-size: 11.5px; }
+.xAxis { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-3); margin: 6px 0 0 34px; }
+.tableToggle { margin-top: 8px; font-size: 13px; }
+.tableToggle summary { cursor: pointer; color: var(--ink-3); }
+.table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+.table th, .table td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+.table td:last-child, .table th:last-child { text-align: right; font-family: var(--font-mono); }
+
+.sources { display: grid; gap: 10px; }
+.source { display: grid; grid-template-columns: minmax(120px, 200px) 1fr auto; align-items: center; gap: 10px; font-size: 13.5px; }
+.sourceTrack { height: 10px; border-radius: 0 4px 4px 0; overflow: hidden; }
+.sourceBar { height: 100%; background: var(--color-primary); border-radius: 0 4px 4px 0; }
+.sourceNum { font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); }
+.hint { font-size: 12.5px; color: var(--ink-3); margin-top: 8px; }
+
+.products { width: 100%; border-collapse: collapse; font-size: 14px; }
+.products th { text-align: left; font-size: 12px; font-weight: 600; color: var(--ink-3); padding: 0 8px 8px; border-bottom: 1px solid var(--line); }
+.products td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.products th.num, .products td.num { text-align: right; font-family: var(--font-mono); white-space: nowrap; }
+.productCell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.productCell img, .noImg { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; border: 1px solid var(--line); flex-shrink: 0; background: var(--color-primary-tint); }
+.productName { color: var(--ink); text-decoration: none; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tag { display: inline-block; margin-top: 2px; font-size: 11.5px; padding: 1px 7px; border-radius: 999px; background: var(--color-ochre-tint); color: var(--amber-700); }
+.tableWrap { overflow-x: auto; }
+
+.tips { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.tips li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; background: var(--color-primary-tint); border-radius: var(--radius-md); padding: 10px 12px; }
+.tips svg { flex-shrink: 0; margin-top: 2px; color: var(--color-primary-dark); }
+
+.empty { text-align: center; padding: 26px 12px; color: var(--ink-2); display: grid; gap: 8px; justify-items: center; }
+.weekly { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }

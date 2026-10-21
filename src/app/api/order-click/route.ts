@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public";
 import { visitorFingerprint } from "@/lib/fingerprint";
+import { sameSite } from "@/lib/same-site";
 
 // Logs taps on "Order on WhatsApp". Public by design (it fires from public pages), so it defends
 // itself: same-site requests only, ids must refer to a public shop/product, repeat taps by the same
@@ -13,22 +14,7 @@ const DEDUPE_MINUTES = 30;
 const BURST_WINDOW_MINUTES = 10;
 const BURST_LIMIT = 20;
 
-const allowedHosts = [process.env.NEXT_PUBLIC_SITE_HOST, process.env.NEXT_PUBLIC_PORTAL_HOST].filter(Boolean) as string[];
 const ok = () => new NextResponse(null, { status: 204 });
-
-function sameSite(req: Request) {
-  const fetchSite = req.headers.get("sec-fetch-site");
-  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "same-site") return false;
-  const origin = req.headers.get("origin");
-  if (!origin) return fetchSite != null; // browsers send at least one of these on a POST
-  try {
-    const host = new URL(origin).hostname;
-    if (process.env.NODE_ENV !== "production") return true;
-    return allowedHosts.some((h) => host === h || host.endsWith(`.${h}`));
-  } catch {
-    return false;
-  }
-}
 
 export async function POST(req: Request) {
   if (!sameSite(req)) return ok(); // silently ignored: nothing to learn by probing

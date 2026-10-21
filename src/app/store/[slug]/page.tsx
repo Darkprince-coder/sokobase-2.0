@@ -13,6 +13,7 @@ import ComingSoon from "@/components/ComingSoon";
 import { site, whatsappLink } from "@/lib/site";
 import { jsonLdString } from "@/lib/jsonld";
 import styles from "./store.module.css";
+import ViewTracker from "@/components/ViewTracker";
 
 // Safety net: server actions revalidate these pages on every change; this catches anything missed.
 export const revalidate = 300;
@@ -47,6 +48,7 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
 
   return (
     <div className={styles.page}>
+      <ViewTracker businessId={store.id} />
       <div className="container">
         <Breadcrumbs items={[{ label: "Shops", href: "/stores" }, { label: store.name }]} />
         {store.coverUrl && (

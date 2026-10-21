@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 import { site } from "@/lib/site";
+import { useEffect } from "react";
 
 // Business sign-in, password and invite pages: just the logo and the form, no shop navigation.
 const AUTH_PAGES = ["/login", "/signup", "/forgot-password", "/reset-password", "/join"];
@@ -11,6 +12,9 @@ const isAuthPage = (path: string) => AUTH_PAGES.some((p) => path === p || path.s
 // Public pages get the header, footer and bottom nav. The admin area has its own shell.
 export default function SiteChrome({ header, footer, bottomNav, children }: { header: ReactNode; footer: ReactNode; bottomNav: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
+  // Marks that this tab has already shown a SokoBase page, so product/shop views opened from here
+  // count as "browsing SokoBase" in sellers' Insights (see ViewTracker). Runs after child effects.
+  useEffect(() => { try { sessionStorage.setItem("sb-landed", "1"); } catch {} }, []);
   if (pathname.startsWith("/admin") || pathname.startsWith("/dashboard")) return <main id="main">{children}</main>;
   if (isAuthPage(pathname)) {
     return (
