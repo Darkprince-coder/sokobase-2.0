@@ -66,6 +66,7 @@ async function anonymousChecks() {
     ["set_business_categories", { p_business_id: FAKE_ID, p_category_ids: [FAKE_ID] }],
     ["my_business_id", {}],
     ["shop_insights", { p_business_id: FAKE_ID, p_from: "2026-01-01", p_to: "2026-01-02" }],
+    ["platform_insights", { p_from: "2026-01-01", p_to: "2026-01-02" }],
   ]) {
     const r = await db.rpc(fn, args);
     record(`Visitors cannot call ${fn}()`, denied(r), why(r, "call succeeded"));
