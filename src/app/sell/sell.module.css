@@ -12,6 +12,8 @@
 .perks svg { flex: none; color: var(--color-primary); margin-top: 3px; }
 
 .h2 { font-size: 22px; margin-bottom: 14px; }
+.anchor { scroll-margin-top: 150px; } /* lands below the sticky header */
+.plansLead { color: var(--ink-3); font-size: 14.5px; margin: -8px 0 16px; }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .step { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; gap: 6px; }
 .step h3 { font-size: 16px; }

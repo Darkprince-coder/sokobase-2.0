@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, Store } from "lucide-react";
 import Logo from "./Logo";
 import SearchBar from "./SearchBar";
 import Button from "./Button";
@@ -28,6 +28,8 @@ export default function Header() {
           <span className={styles.cats}><CategoryMenu /></span>
           <div className={styles.search}><SearchBar /></div>
           <div className={styles.actions}>
+            {/* Phones and tablets: the full "Sell on SokoBase" button doesn't fit, so a compact one. */}
+            <Link href="/sell" className={styles.sellMini}><Store size={16} aria-hidden="true" />Sell</Link>
             <Link href="/saved" className={styles.saved} aria-label={`Saved items${count ? `, ${count}` : ""}`}>
               <Heart size={22} />
               {count > 0 && <span key={count} className={styles.count}>{count}</span>}

@@ -4,3 +4,17 @@
 .text { color: var(--ink-3); font-size: 14px; }
 .meta { font-size: 14px; color: var(--ink-2); display: grid; gap: 4px; }
 .meta strong { color: var(--ink); }
+
+/* Sign-up step 1: plan picker */
+.planList { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.planOption { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1.5px solid var(--line); border-radius: var(--radius-md); text-decoration: none; color: var(--ink); background: var(--white); transition: border-color 0.15s, background 0.15s; }
+.planOption:hover, .planOption:focus-visible { border-color: var(--color-primary); background: var(--color-primary-tint); }
+.planOption > svg { color: var(--color-primary); flex-shrink: 0; }
+.planText { display: grid; gap: 3px; }
+.planText strong { font-size: 16px; }
+.planPrice { font-family: var(--font-mono); font-weight: 600; color: var(--color-primary-dark); font-size: 14.5px; }
+.planMeta { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--ink-3); }
+.planMeta svg { color: var(--color-primary); }
+/* Step 2: the chosen plan, with a way back */
+.chosenPlan { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: var(--radius-md); background: var(--color-primary-tint); font-size: 14px; }
+.chosenPlan a { font-weight: 600; color: var(--color-primary-dark); }

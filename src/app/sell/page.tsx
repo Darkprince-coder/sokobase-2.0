@@ -43,7 +43,7 @@ export default async function SellPage() {
           <h1>Your shop online. One link. Orders on WhatsApp.</h1>
           <p className={styles.lead}>No website to build, no commission on sales. List your products on {site.name} and let customers across Kenya find you and order directly.</p>
           <div className={styles.actions}>
-            <Button href={signup} variant="accent" size="lg" icon={<ArrowRight size={20} />}>Start selling</Button>
+            <Button href={plans.length ? "#plans" : signup} variant="accent" size="lg" icon={<ArrowRight size={20} />}>Start selling</Button>
             {chat && <Button href={chat} external variant="ghost" size="lg" icon={<MessageCircle size={20} />}>Questions? WhatsApp us</Button>}
           </div>
         </div>
@@ -71,7 +71,8 @@ export default async function SellPage() {
 
       {plans.length > 0 && (
         <section className="container" aria-labelledby="plans">
-          <h2 id="plans" className={styles.h2}>Plans</h2>
+          <h2 id="plans" className={`${styles.h2} ${styles.anchor}`}>Choose your plan</h2>
+          <p className={styles.plansLead}>Pick a plan to create your shop. We confirm it with you when we approve your shop.</p>
           <div className={styles.plans}>
             {plans.map((p, i) => {
               const link = `${signup}?plan=${encodeURIComponent(p.slug)}`;
@@ -116,7 +117,7 @@ export default async function SellPage() {
             <h2>Ready to start selling?</h2>
             <p>Create your shop now and add your first products today.</p>
           </div>
-          <Button href={signup} variant="accent" size="lg" icon={<ArrowRight size={20} />}>Start selling</Button>
+          <Button href={plans.length ? "#plans" : signup} variant="accent" size="lg" icon={<ArrowRight size={20} />}>Start selling</Button>
         </div>
       </section>
     </div>

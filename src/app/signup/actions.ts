@@ -35,6 +35,11 @@ export async function signUpBusiness(prev: SignupState, fd: FormData): Promise<S
 
   const db = createAdminClient();
 
+  // A plan is required (chosen on the Sell page or step 1 of /signup).
+  const planSlug = String(fd.get("plan") ?? "").trim();
+  const { data: plan } = planSlug ? await db.from("plans").select("id, name").eq("slug", planSlug).eq("active", true).maybeSingle() : { data: null };
+  if (!plan) return fail("Choose a plan first. Go back and pick the plan that fits your shop.");
+
   // Rate limits: per device (anonymous daily fingerprint) and overall.
   const fingerprint = visitorFingerprint(await headers());
   const hourAgo = new Date(Date.now() - 3600000).toISOString();
@@ -49,10 +54,8 @@ export async function signUpBusiness(prev: SignupState, fd: FormData): Promise<S
   // Housekeeping: attempts only matter for a day.
   await db.from("signup_attempts").delete().lt("created_at", new Date(Date.now() - 2 * 86400000).toISOString());
 
-  const planSlug = String(fd.get("plan") ?? "").trim();
-  const { data: plan } = planSlug ? await db.from("plans").select("id, name").eq("slug", planSlug).eq("active", true).maybeSingle() : { data: null };
 
-  const created = await createShopAccount(db, v, { ...extras, requestedPlanId: plan?.id ?? null });
+  const created = await createShopAccount(db, v, { ...extras, requestedPlanId: plan.id });
   if (!created.ok) return fail(created.error);
 
   // Tell the SokoBase team (best effort).
@@ -62,7 +65,7 @@ export async function signUpBusiness(prev: SignupState, fd: FormData): Promise<S
       heading: `${v.name} signed up`,
       paragraphs: [
         `${v.owner_name} (${v.email}, WhatsApp ${extras.whatsapp}) created a shop in ${v.location}.`,
-        plan ? `They chose the ${plan.name} plan.` : "They did not choose a plan yet.",
+        `They chose the ${plan.name} plan.`,
         "The shop is hidden until you approve it. They can add up to 10 products meanwhile.",
       ],
       button: { label: "Review sign-ups", href: `${site.portalUrl}/admin/signups` },
