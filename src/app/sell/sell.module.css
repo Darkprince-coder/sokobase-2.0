@@ -1,4 +1,6 @@
 .page { padding-bottom: 48px; display: flex; flex-direction: column; gap: 36px; }
+/* Sections are centred containers; without a width they would shrink to their content in this column. */
+.page > * { width: 100%; }
 .hero { padding-top: 28px; display: grid; gap: 24px; }
 .heroText { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
@@ -40,7 +42,7 @@
 @media (min-width: 768px) {
   .hero { grid-template-columns: 1.4fr 1fr; align-items: center; padding-top: 44px; }
   .steps { grid-template-columns: repeat(2, 1fr); }
-  .plans { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .plans { grid-template-columns: repeat(auto-fit, minmax(260px, 340px)); justify-content: center; }
   .cta { flex-direction: row; align-items: center; padding: 32px 40px; }
   .cta > div { flex: 1; }
 }
