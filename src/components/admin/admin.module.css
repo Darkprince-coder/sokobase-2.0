@@ -115,3 +115,8 @@
 .signupReject { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .signupReject label { display: inline-flex; align-items: center; gap: 6px; }
 .navBadge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--color-ochre); color: #fff; font-size: 12px; font-weight: 700; display: inline-grid; place-items: center; }
+
+/* Plans: showing / hidden labels */
+.pillOn, .pillOff { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.pillOn { background: var(--color-primary-tint); color: var(--color-primary-dark); }
+.pillOff { background: var(--line); color: var(--ink-3); }

@@ -33,6 +33,8 @@ const ACTIONS: Record<string, string> = {
   "business.feature": "Featured the shop on the home page",
   "business.unfeature": "Removed the shop from the home page",
   "business.delete": "Deleted the shop permanently",
+  "plan.create": "Added a plan",
+  "plan.delete": "Deleted a plan",
   "business.approve": "Approved a new sign-up",
   "business.reject": "Rejected a new sign-up",
   "business.auto_remove": "Removed an abandoned sign-up automatically",
@@ -54,7 +56,7 @@ export function describeAudit(action: string, details: Record<string, unknown> =
     action === "business.approve" && typeof details.name === "string" && [details.name, details.amount_kes === 0 ? "free trial" : kes(details.amount_kes), details.duration_days ? `${details.duration_days} days` : null].filter(Boolean).join(", "),
     action === "business.auto_remove" && typeof details.name === "string" && details.name,
     (action === "invite.create" || action === "invite.revoke") && typeof details.code === "string" && details.code,
-    action === "plan.update" && typeof details.name === "string" && details.name,
+    (action === "plan.update" || action === "plan.create" || action === "plan.delete") && typeof details.name === "string" && details.name,
     (action.startsWith("category") || action.startsWith("subcategory")) && typeof details.name === "string" && details.name,
   ].filter(Boolean).join(" · ");
   return extra ? `${base} (${extra})` : base;

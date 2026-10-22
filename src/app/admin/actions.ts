@@ -121,22 +121,41 @@ export async function resetOwnerPassword(_prev: ActionState, fd: FormData): Prom
 }
 
 // ---------- Plans ----------
-const planSchema = z.object({
-  id: uuid, name: z.string().trim().min(2, "Plan name is too short").max(30),
+const planFields = {
+  name: z.string().trim().min(2, "Plan name is too short").max(30),
   price_kes: z.coerce.number().int().min(0, "Price cannot be negative").max(1000000),
   duration_days: z.coerce.number().int().min(1).max(365),
-});
+  sort_order: z.coerce.number().int().min(0).max(999).optional().default(0),
+};
+const planSchema = z.object({ id: uuid, ...planFields });
+const newPlanSchema = z.object(planFields);
+
+function parseLimit(fd: FormData): number | null | "invalid" {
+  const raw = String(fd.get("product_limit") ?? "").trim();
+  if (raw === "") return null;
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 1 ? n : "invalid";
+}
+
+// The Sell page must always offer at least one plan.
+async function visiblePlanCount(db: Awaited<ReturnType<typeof adminDb>>["db"], exceptId?: string) {
+  let q = db.from("plans").select("id", { count: "exact", head: true }).eq("active", true);
+  if (exceptId) q = q.neq("id", exceptId);
+  const { count } = await q;
+  return count ?? 0;
+}
 
 export async function updatePlan(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const { db, user } = await adminDb();
   const parsed = planSchema.safeParse(fields(fd));
   if (!parsed.success) return fail(firstError(parsed.error));
-  const limitRaw = String(fd.get("product_limit") ?? "").trim();
-  const limit = limitRaw === "" ? null : Number(limitRaw);
-  if (limit !== null && (!Number.isInteger(limit) || limit < 1)) return fail("Product limit must be a whole number, or empty for unlimited.");
+  const limit = parseLimit(fd);
+  if (limit === "invalid") return fail("Product limit must be a whole number, or empty for unlimited.");
 
   const { id, ...rest } = parsed.data;
-  const { error } = await db.from("plans").update({ ...rest, product_limit: limit, active: fd.get("active") === "on" }).eq("id", id);
+  const active = fd.get("active") === "on";
+  if (!active && (await visiblePlanCount(db, id)) === 0) return fail("Keep at least one plan showing, or the Sell page will have no plans. Add or show another plan first.");
+  const { error } = await db.from("plans").update({ ...rest, product_limit: limit, active }).eq("id", id);
   if (error) return fail("Could not save the plan.");
   await audit(db, user.id, "plan.update", { type: "plan", id }, { ...rest, product_limit: limit, active: fd.get("active") === "on" });
   revalidatePath("/admin/plans");
@@ -456,4 +475,48 @@ export async function rejectSignup(fd: FormData) {
   }
   revalidatePath("/admin", "layout");
   redirect(`/admin/signups?done=${encodeURIComponent(`${b.name} was rejected and removed.${to ? " We emailed the owner." : ""}`)}`);
+}
+
+// ---------- Adding and deleting plans ----------
+export async function createPlan(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const { db, user } = await adminDb();
+  const parsed = newPlanSchema.safeParse(fields(fd));
+  if (!parsed.success) return fail(firstError(parsed.error));
+  const limit = parseLimit(fd);
+  if (limit === "invalid") return fail("Product limit must be a whole number, or empty for unlimited.");
+
+  // The slug is used in Sell page links (?plan=...); keep it unique.
+  const base = slugify(parsed.data.name) || "plan";
+  let slug = base;
+  for (let i = 2; i < 20; i++) {
+    const { data: taken } = await db.from("plans").select("id").eq("slug", slug).maybeSingle();
+    if (!taken) break;
+    slug = `${base}-${i}`;
+  }
+  const { data, error } = await db.from("plans").insert({ ...parsed.data, slug, product_limit: limit, active: true }).select("id").single();
+  if (error || !data) return fail("Could not add the plan.");
+  await audit(db, user.id, "plan.create", { type: "plan", id: data.id }, { ...parsed.data, product_limit: limit });
+  revalidatePath("/admin/plans");
+  refreshPublic();
+  return done(`${parsed.data.name} added. It now shows on the Sell page.`);
+}
+
+// Only plans no shop or invite has ever used can be deleted; used plans are hidden instead so
+// subscription history stays intact.
+export async function deletePlan(fd: FormData) {
+  const { db, user } = await adminDb();
+  const id = uuid.safeParse(fd.get("id"));
+  if (!id.success) return;
+  const [{ data: plan }, { count: subs }, { count: invites }] = await Promise.all([
+    db.from("plans").select("id, name, active").eq("id", id.data).maybeSingle(),
+    db.from("subscriptions").select("id", { count: "exact", head: true }).eq("plan_id", id.data),
+    db.from("invites").select("id", { count: "exact", head: true }).eq("plan_id", id.data),
+  ]);
+  if (!plan || (subs ?? 0) > 0 || (invites ?? 0) > 0) return;
+  if (plan.active && (await visiblePlanCount(db, plan.id)) === 0) return;
+  const { error } = await db.from("plans").delete().eq("id", plan.id);
+  if (error) return;
+  await audit(db, user.id, "plan.delete", { type: "plan", id: plan.id }, { name: plan.name });
+  revalidatePath("/admin/plans");
+  refreshPublic();
 }
