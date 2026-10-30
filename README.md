@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SokoBase
 
-## Getting Started
+A multi-vendor e-commerce marketplace built for small and medium businesses in Kenya that can't afford (or don't want) their own website. Each business gets a storefront at `/store/<slug>` to list products and services under one shared domain and link.
 
-First, run the development server:
+**Live:** [sokobase.co.ke](https://sokobase.co.ke)
+
+## How it works
+
+- **No shopping cart.** Customers browse and tap **Order on WhatsApp**, which opens a chat with the business's own number, prefilled with the product and a link — the business closes the sale themselves.
+- **No customer accounts.** Anyone can browse and order without signing up. Only businesses and the platform owner authenticate.
+- **Invite-only business onboarding.** A business registers through a one-time invite link issued from the admin dashboard, setting their own logo, categories, county, and WhatsApp number.
+- **Subscription plans** (Basic / Standard / Pro) activated and renewed by the platform owner against M-Pesa payments.
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js (App Router, Server Components + Server Actions) |
+| Language | TypeScript |
+| Styling | CSS Modules, custom design tokens — no Tailwind |
+| Animation | Framer Motion |
+| Database & Auth | Supabase (Postgres + Row Level Security) |
+| Validation | Zod on every server action |
+| Images | Cloudinary |
+| Error tracking | Sentry |
+| Testing | Vitest (unit), Playwright (e2e) |
+| PWA | Hand-written service worker, installable on mobile |
+
+## Notable implementation details
+
+- Business logic enforced at the **database level** via Postgres triggers and composite foreign keys (product limits per plan, category caps, subcategory-category consistency), not just in the UI.
+- Four separate Supabase clients (browser, server, public/anonymous, admin) to keep row-level security and the service-role key properly scoped.
+- Invite codes are claimed atomically (`UPDATE ... WHERE used_at IS NULL RETURNING ...`) so two simultaneous signups on the same link can't both succeed.
+- All 47 Kenyan counties seeded, with admin-managed categories and subcategories enforced against their parent category in the schema.
+
+## Running locally
 
 ```bash
+npm install
+cp .env.example .env   # fill in your own Supabase + Cloudinary values
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Apply the SQL migrations in `supabase/migrations/` (in order) to a Supabase project before running the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run test       # Vitest unit tests
+npm run typecheck   # TypeScript
+npm run lint
+```
